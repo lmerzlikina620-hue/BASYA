@@ -1,0 +1,1702 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
+<title>BASYA</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Lora:wght@500;600;700;800&family=Source+Serif+4:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--paper:#FFFFFF;--paper-raised:#FFFFFF;--ink:#191919;--ink-soft:#5C5A52;--ink-faint:#9A968A;--hair:#E7E4DC;--moss:#2F5D3A;--moss-soft:#EAF0EA;--clay:#B24A2E;--gold:#A9822E;}
+html[data-theme="dark"]{--paper:#0B0F19;--paper-raised:#131826;--ink:#F3F4F6;--ink-soft:#B7BAC3;--ink-faint:#767B8A;--hair:#232A3B;--moss:#4CA968;--moss-soft:#152A20;--clay:#E0765A;--gold:#D6AE5C;}
+*{-webkit-tap-highlight-color:transparent;box-sizing:border-box;}
+html,body{background:var(--paper);height:100%;}
+body{font-family:'Inter',sans-serif;color:var(--ink);overscroll-behavior-y:none;transition:background-color .3s ease,color .3s ease;}
+.top-bar,.tab-bar,.post-card,.write-card,.word-row,.modal-sheet,.settings-panel,.notif-row,.subnav,input,textarea,.dropzone{transition:background-color .3s ease,color .3s ease,border-color .3s ease;}
+.font-logo{font-family:'Lora',serif;font-weight:800;text-transform:uppercase;letter-spacing:.05em;}
+.font-headline{font-family:'Lora',serif;font-weight:600;}
+.font-serif{font-family:'Source Serif 4',serif;}
+::-webkit-scrollbar{display:none;}*{scrollbar-width:none;}
+/* ---------- STABLE SHELL: app-shell is a fixed-height flex column; every .view
+   is forced to flex:1 so it always fills the remaining space (between top-bar
+   and tab-bar) regardless of how little content it has - this is what stops
+   the tab-bar from jumping upward on short views like Words or Notifications. */
+#app-shell{max-width:480px;margin:0 auto;height:100vh;background:var(--paper);position:relative;display:flex;flex-direction:column;overflow:hidden;}
+.view{display:none;flex-direction:column;flex:1 1 auto;min-height:0;overflow:hidden;}
+.view.active{display:flex;}
+.view-scroll{overflow-y:auto;flex:1 1 auto;min-height:0;}
+.tab-bar{flex-shrink:0;background:var(--paper-raised);border-top:1px solid var(--hair);display:flex;z-index:40;}
+.tab-btn{flex:1;position:relative;display:flex;flex-direction:column;align-items:center;gap:3px;padding:9px 0 7px;color:var(--ink-soft);background:none;border:none;}
+.tab-btn.active{color:var(--moss);}
+.tab-btn svg{width:21px;height:21px;}
+.tab-label{font-size:10px;letter-spacing:.02em;}
+.tab-badge{position:absolute;top:2px;right:calc(50% - 18px);background:var(--clay);color:#fff;font-size:9.5px;font-weight:700;min-width:15px;height:15px;border-radius:999px;display:flex;align-items:center;justify-content:center;padding:0 3px;}
+.top-bar{flex-shrink:0;background:var(--paper);border-bottom:1px solid var(--hair);z-index:30;}
+.top-bar-row{padding:14px 18px 10px;display:flex;align-items:center;justify-content:space-between;gap:10px;}
+.search-icon-btn{background:none;border:none;color:var(--ink);display:flex;align-items:center;justify-content:center;padding:4px;}
+.search-icon-btn svg{width:21px;height:21px;}
+.search-overlay{position:fixed;inset:0;z-index:90;background:var(--paper);display:none;flex-direction:column;}
+.search-overlay.active{display:flex;}
+.search-overlay-top{flex-shrink:0;padding:14px 18px 12px;border-bottom:1px solid var(--hair);display:flex;align-items:center;gap:10px;}
+.search-overlay-input-wrap{flex:1;display:flex;align-items:center;gap:8px;background:var(--paper-raised);border:1px solid var(--hair);border-radius:10px;padding:9px 12px;}
+.search-overlay-input-wrap svg{width:16px;height:16px;stroke:var(--ink-faint);flex-shrink:0;}
+.search-overlay-input-wrap input{border:none;background:transparent;font-size:14px;padding:0;width:100%;}
+.search-overlay-input-wrap input:focus{outline:none;}
+.search-close-btn{background:none;border:none;font-size:13.5px;font-weight:600;color:var(--moss);white-space:nowrap;}
+.search-section-title{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--ink-faint);padding:16px 18px 6px;}
+.recent-item{display:flex;align-items:center;justify-content:space-between;padding:11px 18px;border-bottom:1px solid var(--hair);}
+.recent-item-btn{background:none;border:none;display:flex;align-items:center;gap:9px;color:var(--ink);font-size:14px;flex:1;text-align:left;}
+.recent-item-btn svg{width:15px;height:15px;stroke:var(--ink-faint);flex-shrink:0;}
+.recent-del{background:none;border:none;color:var(--ink-faint);padding:4px;flex-shrink:0;}
+.recent-del svg{width:14px;height:14px;}
+.subnav{flex-shrink:0;display:flex;background:var(--paper-raised);border-bottom:1px solid var(--hair);z-index:29;}
+.subnav-btn{flex:1;padding:10px 0;font-size:13px;font-weight:600;color:var(--ink-soft);background:none;border:none;border-bottom:2px solid transparent;}
+.subnav-btn.active{color:var(--moss);border-bottom-color:var(--moss);}
+.btn-primary{background:var(--moss);color:#fff;font-weight:600;font-size:14px;padding:8px 18px;border-radius:999px;border:none;}
+.btn-primary:disabled{opacity:.4;}
+.btn-outline{background:transparent;color:var(--moss);font-weight:600;font-size:13px;padding:6px 14px;border-radius:999px;border:1px solid var(--moss);}
+.btn-outline.following{color:var(--ink-soft);border-color:var(--hair);}
+.post-card{padding:20px 18px;border-bottom:1px solid var(--hair);}
+.avatar{border-radius:50%;object-fit:cover;background:var(--hair);flex-shrink:0;}
+.stat-btn{background:none;border:none;padding:0;font:inherit;color:inherit;}
+.icon-btn{display:flex;align-items:center;gap:5px;color:var(--ink-soft);background:none;border:none;font-size:13px;}
+.icon-btn svg{width:19px;height:19px;}
+.icon-btn.liked{color:var(--clay);}
+.icon-btn.liked svg{fill:var(--clay);stroke:var(--clay);}
+.icon-btn.bookmarked{color:var(--moss);}
+.icon-btn.bookmarked svg{fill:var(--moss);stroke:var(--moss);}
+.icon-btn.reposted{color:var(--gold);}
+.repost-banner{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--ink-faint);font-weight:600;margin-bottom:8px;}
+.repost-banner svg{width:14px;height:14px;}
+.tag-pill{display:inline-block;font-size:11.5px;font-weight:600;color:var(--moss);background:var(--moss-soft);padding:3px 9px;border-radius:999px;margin:0 6px 6px 0;}
+.read-more-btn{background:none;border:none;padding:0;font-size:14px;font-weight:600;color:var(--moss);}
+.tooltip-save{position:fixed;z-index:210;transform:translate(-50%,-100%);background:var(--ink);color:#fff;padding:6px;border-radius:10px;font-size:12.5px;font-weight:600;display:flex;align-items:center;gap:2px;box-shadow:0 6px 20px rgba(0,0,0,.25);}
+.tooltip-save:after{content:'';position:absolute;left:50%;bottom:-5px;transform:translateX(-50%);width:10px;height:10px;background:var(--ink);rotate:45deg;}
+.tooltip-btn{background:rgba(255,255,255,.08);border:none;color:#fff;padding:6px 10px;border-radius:7px;display:flex;align-items:center;gap:5px;white-space:nowrap;}
+.tooltip-btn svg{width:13px;height:13px;}
+.field-label{font-size:12px;font-weight:600;color:var(--ink-soft);margin-bottom:6px;display:block;}
+input[type=text],input[type=email],input[type=password],input[type=number],textarea{width:100%;border:1px solid var(--hair);border-radius:10px;padding:10px 12px;background:var(--paper-raised);font-size:15px;color:var(--ink);font-family:'Inter',sans-serif;}
+input:focus,textarea:focus{outline:2px solid var(--moss);outline-offset:1px;}
+.write-card{background:var(--paper-raised);border-radius:16px;padding:18px;box-shadow:0 2px 6px rgba(27,27,24,.05),0 10px 26px rgba(27,27,24,.06);border:1px solid var(--hair);}
+#write-title{font-family:'Lora',serif;font-weight:700;font-size:24px;width:100%;border:none;background:transparent;}
+#write-title::placeholder{color:#C6C2B6;}
+#write-title:focus{outline:none;}
+.write-tip{font-size:12px;color:var(--ink-faint);margin-top:2px;margin-bottom:14px;}
+#write-body{font-family:'Source Serif 4',serif;font-size:16.5px;line-height:1.65;width:100%;border:none;background:transparent;resize:none;}
+#write-body:focus{outline:none;}
+#write-body::placeholder{color:#C6C2B6;}
+.dropzone{border:1.5px dashed #CFCBBE;border-radius:14px;padding:18px 14px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;color:var(--ink-faint);background:#FDFCFA;text-align:center;}
+.dropzone svg{width:24px;height:24px;stroke:var(--ink-faint);}
+.dropzone .dz-title{font-size:13px;font-weight:600;color:var(--moss);}
+.dropzone .dz-sub{font-size:11px;color:var(--ink-faint);}
+.thumb-row{display:flex;gap:8px;overflow-x:auto;padding-bottom:2px;}
+.thumb-item{position:relative;flex:none;width:68px;height:68px;}
+.thumb-item img{width:100%;height:100%;object-fit:cover;border-radius:10px;}
+.thumb-remove{position:absolute;top:-6px;right:-6px;background:var(--ink);color:#fff;width:18px;height:18px;border-radius:50%;font-size:10px;display:flex;align-items:center;justify-content:center;border:2px solid var(--paper-raised);}
+.carousel{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;border-radius:12px;margin-bottom:10px;}
+.carousel img{width:100%;flex:0 0 100%;scroll-snap-align:start;object-fit:cover;max-height:250px;border-radius:12px;}
+.carousel-dots{display:flex;justify-content:center;gap:5px;margin-bottom:10px;margin-top:-4px;}
+.carousel-dot{width:5px;height:5px;border-radius:50%;background:var(--hair);}
+.carousel-dot.active{background:var(--moss);}
+.word-row{background:var(--paper-raised);border:1px solid var(--hair);border-radius:12px;padding:12px 14px;display:flex;align-items:center;justify-content:space-between;gap:10px;}
+.word-del-btn{background:none;border:none;color:var(--ink-faint);flex-shrink:0;padding:4px;}
+.word-del-btn svg{width:17px;height:17px;}
+.word-transcription{font-family:'Source Serif 4',serif;font-style:italic;color:var(--ink-faint);font-size:12.5px;}
+.modal-backdrop{position:fixed;inset:0;background:rgba(15,15,12,.45);z-index:100;display:flex;align-items:flex-end;}
+.modal-sheet{background:var(--paper-raised);width:100%;max-width:480px;margin:0 auto;border-radius:18px 18px 0 0;padding:20px 18px 28px;max-height:82vh;overflow-y:auto;}
+.modal-sheet.center{border-radius:18px;margin:auto;}
+.empty-state{padding:56px 24px;text-align:center;color:var(--ink-soft);}
+/* ---------- settings slide panel ---------- */
+.settings-backdrop{position:fixed;inset:0;background:rgba(15,15,12,.45);z-index:110;display:none;}
+.settings-backdrop.active{display:block;}
+.settings-panel{position:fixed;top:0;right:0;bottom:0;width:85%;max-width:380px;background:var(--paper-raised);z-index:111;transform:translateX(100%);transition:transform .32s ease;display:flex;flex-direction:column;box-shadow:-8px 0 30px rgba(0,0,0,.15);}
+.settings-panel.active{transform:translateX(0);}
+.settings-row{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--hair);}
+.settings-row-label{display:flex;align-items:center;gap:12px;font-size:14.5px;}
+.settings-row-label svg{width:19px;height:19px;stroke:var(--ink-soft);}
+.settings-chevron{width:16px;height:16px;stroke:var(--ink-faint);}
+.toggle-switch{width:44px;height:26px;border-radius:999px;background:var(--hair);position:relative;border:none;flex-shrink:0;transition:background-color .2s ease;}
+.toggle-switch.on{background:var(--moss);}
+.toggle-knob{position:absolute;top:2px;left:2px;width:22px;height:22px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.3);transition:transform .2s ease;}
+.toggle-switch.on .toggle-knob{transform:translateX(18px);}
+.settings-logout-btn{margin:20px 18px;padding:11px;border-radius:10px;border:1px solid var(--clay);color:var(--clay);font-weight:600;font-size:14px;background:none;}
+/* ---------- country picker ---------- */
+.country-select-btn{width:100%;text-align:left;border:1px solid var(--hair);border-radius:10px;padding:10px 12px;background:var(--paper-raised);font-size:15px;color:var(--ink);display:flex;align-items:center;justify-content:space-between;}
+.country-select-btn.placeholder{color:#9A968A;}
+.country-row{display:flex;align-items:center;gap:12px;padding:12px 18px;border-bottom:1px solid var(--hair);width:100%;text-align:left;background:none;border-left:none;border-right:none;border-top:none;}
+.country-flag{font-size:20px;}
+.forgot-pw-btn{background:none;border:none;font-size:12.5px;font-weight:600;color:var(--moss);text-align:right;display:block;margin-left:auto;}
+.reset-banner{display:flex;align-items:center;gap:10px;background:var(--moss-soft);border:1px solid var(--moss);border-radius:12px;padding:12px 14px;margin-top:10px;font-size:13px;color:var(--moss);}
+.reset-banner svg{width:18px;height:18px;stroke:var(--moss);flex-shrink:0;}
+
+.end-of-list{padding:26px 24px 40px;text-align:center;font-size:12.5px;color:#C4C0B4;letter-spacing:.02em;}
+.avatar-upload-wrap{position:relative;width:84px;height:84px;}
+.avatar-upload-wrap .avatar{width:84px;height:84px;}
+.avatar-cam{position:absolute;bottom:-2px;right:-2px;width:28px;height:28px;border-radius:50%;background:var(--moss);display:flex;align-items:center;justify-content:center;border:2px solid var(--paper-raised);}
+.avatar-cam svg{width:14px;height:14px;stroke:#fff;}
+.comments-drawer{overflow:hidden;max-height:0;opacity:0;transition:max-height .32s ease,opacity .28s ease;}
+.comments-drawer.open{max-height:6000px;opacity:1;}
+.comment-input-min{border:none;border-bottom:1.5px solid var(--hair);border-radius:0;background:transparent;padding:8px 2px;font-size:14px;}
+.comment-input-min:focus{outline:none;border-bottom-color:var(--moss);}
+.list-user-row{display:flex;align-items:center;gap:12px;padding:10px 2px;}
+.comment-block{margin-bottom:8px;}
+.comment-heart{background:none;border:none;padding:0;display:inline-flex;align-items:center;gap:3px;color:var(--ink-faint);font-size:11.5px;}
+.comment-heart svg{width:13px;height:13px;}
+.comment-heart.liked{color:var(--clay);}
+.comment-heart.liked svg{fill:var(--clay);stroke:var(--clay);}
+.comment-reply-btn,.view-replies-btn{background:none;border:none;padding:0;color:var(--ink-faint);font-size:11.5px;font-weight:600;}
+.view-replies-btn{color:var(--moss);margin-top:4px;display:inline-block;}
+.reply-input-row{display:flex;gap:6px;margin-top:6px;}
+.replies-wrap{margin-left:28px;border-left:1.5px solid var(--hair);padding-left:12px;margin-top:6px;}
+.notif-row{display:flex;gap:10px;padding:14px 18px;border-bottom:1px solid var(--hair);}
+.notif-row.unread{background:var(--moss-soft);}
+.notif-dot{width:8px;height:8px;border-radius:50%;background:var(--moss);flex-shrink:0;margin-top:6px;}
+#onboarding{position:fixed;inset:0;z-index:300;background:var(--paper);display:flex;align-items:center;justify-content:center;}
+.onboard-inner{width:100%;max-width:420px;padding:28px 26px;display:flex;flex-direction:column;height:100%;justify-content:center;}
+.onboard-step{display:none;flex-direction:column;}
+.onboard-step.active{display:flex;}
+.back-row{display:flex;align-items:center;margin-bottom:18px;}
+.back-btn{background:none;border:none;display:flex;align-items:center;gap:4px;color:var(--ink-soft);font-size:13px;font-weight:600;padding:0;}
+.back-btn svg{width:17px;height:17px;}
+.progress-dots{display:flex;gap:6px;margin-bottom:20px;}
+.progress-dot{height:4px;flex:1;border-radius:2px;background:var(--hair);}
+.progress-dot.active{background:var(--moss);}
+.field-error{font-size:12px;color:var(--clay);margin-top:-10px;margin-bottom:14px;min-height:14px;}
+.brand-circle{width:88px;height:88px;border-radius:50%;border:1.5px solid var(--ink-faint);display:flex;align-items:center;justify-content:center;}
+.brand-letter{font-family:'Lora',serif;font-weight:800;font-size:42px;color:var(--ink);}
+.eye-toggle{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--ink-faint);padding:2px;}
+.eye-toggle svg{width:18px;height:18px;}
+.pw-wrap{position:relative;}
+#flashcards-overlay{position:fixed;inset:0;z-index:150;background:var(--paper);display:none;flex-direction:column;}
+#flashcards-overlay.active{display:flex;}
+.flash-stage{flex:1;display:flex;align-items:center;justify-content:center;padding:24px;}
+.flash-card{width:100%;max-width:320px;height:330px;perspective:1200px;cursor:pointer;}
+.flash-card-inner{position:relative;width:100%;height:100%;transition:transform .5s;transform-style:preserve-3d;}
+.flash-card-inner.flipped{transform:rotateY(180deg);}
+.flash-face{position:absolute;inset:0;backface-visibility:hidden;border-radius:20px;border:1px solid var(--hair);background:var(--paper-raised);box-shadow:0 10px 30px rgba(27,27,24,.08);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:20px;text-align:center;}
+.flash-face.back{transform:rotateY(180deg);background:var(--moss-soft);}
+.flash-word{font-family:'Lora',serif;font-weight:700;font-size:28px;}
+.flash-controls{display:flex;align-items:center;justify-content:center;gap:20px;padding:8px 24px 24px;}
+.flash-nav-btn{width:44px;height:44px;border-radius:50%;background:var(--paper-raised);border:1px solid var(--hair);display:flex;align-items:center;justify-content:center;}
+.flash-nav-btn svg{width:19px;height:19px;}
+</style>
+</head>
+<body>
+<div id="app-shell">
+
+<div id="view-feed" class="view active">
+  <div class="top-bar">
+    <div class="top-bar-row">
+      <span class="font-logo text-xl">Basya</span>
+      <div class="flex items-center gap-1">
+        <button id="open-search-btn" class="search-icon-btn" aria-label="Search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg></button>
+        <button id="feed-bookmarks-btn" class="icon-btn" style="gap:0;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 4h12v17l-6-4-6 4V4z"/></svg></button>
+      </div>
+    </div>
+  </div>
+  <div class="view-scroll min-h-[calc(100vh-140px)]"><div id="feed-list"></div></div>
+</div>
+
+<div id="view-words" class="view">
+  <div class="top-bar"><div class="top-bar-row"><span class="font-headline text-xl">Words</span><span id="words-count" class="text-xs" style="color:var(--ink-soft);"></span></div></div>
+  <div class="subnav"><button id="words-tab-list" class="subnav-btn active">List</button><button id="words-tab-flash" class="subnav-btn">Flashcards</button></div>
+  <div class="view-scroll min-h-[calc(100vh-140px)]"><div id="words-list" class="px-[18px] py-4 flex flex-col gap-2.5"></div></div>
+</div>
+
+<div id="view-write" class="view">
+  <div class="top-bar"><div class="top-bar-row"><button id="write-cancel" class="text-sm" style="color:var(--ink-soft);">Cancel</button><span class="font-headline text-xl">Write</span><button id="write-publish" class="btn-primary">Publish</button></div></div>
+  <div class="view-scroll min-h-[calc(100vh-140px)]"><div class="px-[18px] pt-5 pb-24">
+    <div class="write-card flex flex-col gap-1">
+      <input id="write-title" type="text" placeholder="Title should be catchy...">
+      <div class="write-tip">A strong title makes readers stop scrolling.</div>
+      <label class="field-label">Tags</label>
+      <input id="write-tags" type="text" placeholder="travel, coffee, mindset" class="mb-4">
+      <input type="file" id="write-photo-input" accept="image/*" multiple class="hidden">
+      <div id="write-dropzone" class="dropzone mb-3">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.6"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="8.5" cy="10.5" r="1.5"/><path d="M21 15l-5-5L5 19"/></svg>
+        <span class="dz-title">+ Add photos</span><span class="dz-sub">Choose one or several from your gallery</span>
+      </div>
+      <div id="write-thumbs" class="thumb-row mb-4 hidden"></div>
+      <textarea id="write-body" rows="12" placeholder="Write in English to help others learn..."></textarea>
+    </div>
+  </div></div>
+</div>
+
+<div id="view-notifications" class="view">
+  <div class="top-bar"><div class="top-bar-row"><span class="font-headline text-xl">Notifications</span><span style="width:10px;"></span></div></div>
+  <div class="view-scroll min-h-[calc(100vh-140px)]"><div id="notifications-list"></div></div>
+</div>
+
+<div id="view-profile" class="view">
+  <div class="top-bar"><div class="top-bar-row"><span class="font-headline text-xl">Profile</span><div class="flex items-center gap-3"><button id="profile-edit-btn" class="text-sm font-semibold" style="color:var(--moss);">Edit</button><button id="profile-settings-btn" class="search-icon-btn" aria-label="Settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06A1.65 1.65 0 004.6 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06A1.65 1.65 0 009 4.6a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg></button></div></div></div>
+  <div class="view-scroll min-h-[calc(100vh-140px)]"><div id="profile-content"></div></div>
+</div>
+
+<div id="view-author" class="view">
+  <div class="top-bar"><div class="top-bar-row"><button id="author-back" class="text-sm" style="color:var(--ink-soft);"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg></button><span class="font-headline text-xl">Author</span><span style="width:20px;"></span></div></div>
+  <div class="view-scroll min-h-[calc(100vh-140px)]"><div id="author-content"></div></div>
+</div>
+
+<nav class="tab-bar">
+  <button class="tab-btn" data-tab="feed"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 6h16M4 12h16M4 18h10"/></svg><span class="tab-label">Feed</span></button>
+  <button class="tab-btn" data-tab="words"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 4h9a3 3 0 013 3v13H8a3 3 0 01-3-3V4z"/><path d="M5 17a3 3 0 013-3h9"/></svg><span class="tab-label">Words</span></button>
+  <button class="tab-btn" data-tab="write"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg><span class="tab-label">Write</span></button>
+  <button class="tab-btn" data-tab="notifications"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg><span id="notif-badge" class="tab-badge hidden">0</span><span class="tab-label">Alerts</span></button>
+  <button class="tab-btn" data-tab="profile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="3.5"/><path d="M4.5 20a7.5 7.5 0 0115 0"/></svg><span class="tab-label">Profile</span></button>
+</nav>
+</div>
+
+<div id="search-overlay" class="search-overlay">
+  <div class="search-overlay-top">
+    <div class="search-overlay-input-wrap">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+      <input type="text" id="search-overlay-input" placeholder="Search articles by keywords or #hashtags...">
+    </div>
+    <button id="search-overlay-close" class="search-close-btn">Close</button>
+  </div>
+  <div class="view-scroll">
+    <div id="search-recent-section">
+      <div class="search-section-title">Recent Searches</div>
+      <div id="search-recent-list"></div>
+    </div>
+    <div id="search-results-list"></div>
+  </div>
+</div>
+
+<div id="settings-backdrop" class="settings-backdrop"></div>
+<div id="settings-panel" class="settings-panel">
+  <div class="top-bar"><div class="top-bar-row"><span class="font-headline text-xl">Settings</span><button id="settings-close" class="text-sm" style="color:var(--ink-soft);">Close</button></div></div>
+  <div class="view-scroll">
+    <button class="settings-row w-full" id="settings-account-security">
+      <span class="settings-row-label"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><path d="M12 2l8 4v6c0 5-3.4 8.4-8 10-4.6-1.6-8-5-8-10V6l8-4z"/></svg>Account Security</span>
+      <svg class="settings-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+    </button>
+    <button class="settings-row w-full" id="settings-privacy">
+      <span class="settings-row-label"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 018 0v3"/></svg>Privacy Policy</span>
+      <svg class="settings-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+    </button>
+    <button class="settings-row w-full" id="settings-help">
+      <span class="settings-row-label"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 015 0c0 1.7-2.5 2-2.5 4"/><path d="M12 17h.01"/></svg>Help Center</span>
+      <svg class="settings-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+    </button>
+    <div class="settings-row">
+      <span class="settings-row-label"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8"><path d="M21 12.8A9 9 0 1111.2 3a7 7 0 009.8 9.8z"/></svg>Dark Mode</span>
+      <button id="dark-mode-toggle" class="toggle-switch" aria-label="Toggle dark mode"><span class="toggle-knob"></span></button>
+    </div>
+    <button id="settings-logout-btn" class="settings-logout-btn w-full">Log Out</button>
+  </div>
+</div>
+
+<div id="modal-country" class="modal-backdrop hidden">
+  <div class="modal-sheet" style="padding-left:0;padding-right:0;">
+    <div class="flex items-center justify-between mb-2 px-[18px]"><span class="font-headline text-lg">Select your country</span><button id="country-modal-close" class="text-sm" style="color:var(--ink-soft);">Close</button></div>
+    <div id="country-modal-list" style="max-height:60vh;overflow-y:auto;"></div>
+  </div>
+</div>
+
+<div id="modal-edit-profile" class="modal-backdrop hidden">
+  <div class="modal-sheet">
+    <div class="flex items-center justify-between mb-5"><span class="font-headline text-lg">Edit profile</span><button id="edit-profile-close" class="text-sm" style="color:var(--ink-soft);">Close</button></div>
+    <div class="flex items-center gap-4 mb-5">
+      <div class="avatar-upload-wrap"><img id="edit-avatar-preview" class="avatar" src=""><div class="avatar-cam"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="8.5" cy="10.5" r="1.5"/><path d="M21 15l-5-5L5 19"/></svg></div><input type="file" id="edit-avatar-input" accept="image/*" class="absolute inset-0 opacity-0 cursor-pointer"></div>
+      <span class="text-xs" style="color:var(--ink-soft);">Tap photo to change</span>
+    </div>
+    <label class="field-label">Name</label><input type="text" id="edit-name" class="mb-4">
+    <label class="field-label">Bio</label><textarea id="edit-bio" rows="3" class="mb-5"></textarea>
+    <button id="edit-profile-save" class="btn-primary w-full py-2.5">Save changes</button>
+  </div>
+</div>
+
+<div id="modal-people" class="modal-backdrop hidden">
+  <div class="modal-sheet">
+    <div class="flex items-center justify-between mb-4"><span id="people-modal-title" class="font-headline text-lg">Followers</span><button id="people-modal-close" class="text-sm" style="color:var(--ink-soft);">Close</button></div>
+    <div id="people-modal-list" class="flex flex-col"></div>
+  </div>
+</div>
+
+<div id="modal-translate" class="modal-backdrop hidden">
+  <div class="modal-sheet center">
+    <div class="flex items-center justify-between mb-3"><span id="translate-word" class="font-headline text-2xl"></span><button id="translate-close" class="text-sm" style="color:var(--ink-soft);">✕</button></div>
+    <div style="background:var(--moss-soft);border-radius:12px;padding:14px;">
+      <div id="translate-transcription" class="word-transcription text-sm mb-2"></div>
+      <div id="translate-text" class="font-serif text-xl" style="color:var(--moss);"></div>
+    </div>
+    <button id="translate-save-btn" class="btn-primary w-full py-2.5 mt-4">+ Save to Words</button>
+  </div>
+</div>
+
+<div id="flashcards-overlay">
+  <div class="top-bar"><div class="top-bar-row"><button id="flash-close" class="text-sm" style="color:var(--ink-soft);">Close</button><span class="font-headline text-xl">Flashcards</span><span id="flash-position" class="text-xs" style="color:var(--ink-soft);"></span></div></div>
+  <div class="flash-stage"><div id="flash-card" class="flash-card"><div id="flash-card-inner" class="flash-card-inner">
+    <div class="flash-face front"><span id="flash-word-front" class="flash-word"></span><span id="flash-transcription-front" class="word-transcription text-base"></span><span class="text-xs mt-3" style="color:var(--ink-faint);">Tap to flip</span></div>
+    <div class="flash-face back"><span id="flash-word-back" class="text-sm" style="color:var(--ink-soft);"></span><span id="flash-translation-back" class="font-serif text-2xl" style="color:var(--moss);"></span></div>
+  </div></div></div>
+  <div class="flash-controls">
+    <button id="flash-prev" class="flash-nav-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg></button>
+    <button id="flash-next" class="flash-nav-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg></button>
+  </div>
+</div>
+
+<div id="save-tooltip" class="tooltip-save hidden">
+  <button class="tooltip-btn" id="tooltip-save-btn"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M5 4h9a3 3 0 013 3v13H8a3 3 0 01-3-3V4z"/></svg>Save</button>
+  <button class="tooltip-btn" id="tooltip-translate-btn"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M4 5h7M9 3v2M7 5c0 4 2.5 6.5 5 8M6 13c2-1 3-3 4-5M14 21l4-9 4 9M15.5 18h5"/></svg>Translate</button>
+</div>
+
+<div id="onboarding">
+  <div class="onboard-inner">
+
+    <div id="ob-welcome" class="onboard-step active">
+      <div class="flex-1 flex flex-col items-center justify-center">
+        <div class="brand-circle mb-5"><span class="brand-letter">B</span></div>
+        <span class="font-headline text-2xl mb-2" style="font-weight:800;">Welcome to BASYA</span>
+        <p class="text-sm text-center" style="color:var(--ink-soft);max-width:260px;">Read, write, and grow your English vocabulary — one story at a time.</p>
+      </div>
+      <div class="flex flex-col gap-3">
+        <button id="get-started-btn" class="btn-primary w-full py-3">Get Started</button>
+        <button id="go-login" class="btn-outline w-full py-3">Log in</button>
+      </div>
+    </div>
+
+    <div id="ob-signup1" class="onboard-step">
+      <div class="back-row"><button class="back-btn" data-back="ob-welcome"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>Back</button></div>
+      <span class="font-headline text-2xl mb-1">Create your account</span>
+      <p class="text-sm mb-5" style="color:var(--ink-soft);">It only takes a moment.</p>
+      <label class="field-label">Email</label>
+      <input type="email" id="su-email" placeholder="you@example.com" class="mb-1">
+      <div class="field-error" id="su-email-error"></div>
+      <label class="field-label">Password</label>
+      <div class="pw-wrap mb-1">
+        <input type="password" id="su-password" placeholder="At least 6 characters">
+        <button type="button" class="eye-toggle" id="su-pw-eye"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg></button>
+      </div>
+      <div class="field-error" id="su-password-error"></div>
+      <label class="field-label">Username</label>
+      <input type="text" id="su-username" placeholder="e.g. alexrivers" class="mb-1">
+      <div class="field-error" id="su-username-error"></div>
+      <label class="field-label">Age</label>
+      <input type="number" id="su-age" placeholder="e.g. 27" min="13" max="120" class="mb-1">
+      <div class="field-error" id="su-age-error"></div>
+      <p class="text-xs mb-4" style="color:var(--ink-faint);">Age is used for internal statistics only and will not be displayed on your public profile.</p>
+      <label class="field-label">Country</label>
+      <button type="button" id="su-country-btn" class="country-select-btn placeholder mb-1">
+        <span id="su-country-label">Select your country</span>
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+      </button>
+      <div class="field-error" id="su-country-error"></div>
+      <button id="su-register" class="btn-primary w-full py-2.5 mt-3">Create Account</button>
+    </div>
+
+    <div id="ob-recover" class="onboard-step">
+      <div class="back-row"><button class="back-btn" data-back="ob-welcome"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>Back</button></div>
+      <span class="font-headline text-2xl mb-1">Finish setting up</span>
+      <p class="text-sm mb-5" style="color:var(--ink-soft);">Your email and password are confirmed. This browser doesn't have your original profile details, so let's fill them in again.</p>
+      <label class="field-label">Username</label>
+      <input type="text" id="rec-username" placeholder="e.g. alexrivers" class="mb-1">
+      <div class="field-error" id="rec-username-error"></div>
+      <label class="field-label">Age</label>
+      <input type="number" id="rec-age" placeholder="e.g. 27" min="13" max="120" class="mb-1">
+      <div class="field-error" id="rec-age-error"></div>
+      <label class="field-label">Country</label>
+      <button type="button" id="rec-country-btn" class="country-select-btn placeholder mb-1">
+        <span id="rec-country-label">Select your country</span>
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+      </button>
+      <div class="field-error" id="rec-country-error"></div>
+      <button id="rec-finish" class="btn-primary w-full py-2.5 mt-3">Start reading</button>
+    </div>
+
+    <div id="ob-login" class="onboard-step">
+      <div class="back-row"><button class="back-btn" data-back="ob-welcome"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>Back</button></div>
+      <span class="font-headline text-2xl mb-1">Welcome back</span>
+      <p class="text-sm mb-5" style="color:var(--ink-soft);">Log in with your email and password.</p>
+      <label class="field-label">Email</label>
+      <input type="email" id="li-email" placeholder="you@example.com" class="mb-4">
+      <label class="field-label">Password</label>
+      <div class="pw-wrap mb-1">
+        <input type="password" id="li-password" placeholder="••••••••">
+        <button type="button" class="eye-toggle" id="li-pw-eye"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg></button>
+      </div>
+      <button type="button" id="forgot-password-btn" class="forgot-pw-btn mb-1">Forgot Password?</button>
+      <div class="field-error" id="li-error"></div>
+      <div id="reset-banner" class="reset-banner hidden">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M22 6l-10 7L2 6"/><rect x="2" y="4" width="20" height="16" rx="2"/></svg>
+        <span>A password reset link has been sent to your email address.</span>
+      </div>
+      <button id="li-submit" class="btn-primary w-full py-2.5 mt-3">Log In</button>
+    </div>
+
+  </div>
+</div>
+
+<script>
+(function(){
+/* ============================================================
+   FIREBASE — classic Email/Password authentication via
+   createUserWithEmailAndPassword / signInWithEmailAndPassword / signOut.
+   Loaded via a DYNAMIC import wrapped in try/catch, on purpose:
+   a static top-level `import` would abort this entire script (and
+   every button on the page) if the Firebase CDN can't be reached
+   (offline, blocked network, restricted preview sandbox, etc). With a
+   dynamic import, the rest of the app - navigation, Feed, Write, Words, all
+   of it - always keeps working, and only real account creation/login
+   degrades with a clear inline error if Firebase genuinely isn't reachable.
+
+   Each module is fetched from Google's own CDN (gstatic.com) first; if
+   that specific host is unreachable (regional blocking/filtering of
+   Google domains is common and has nothing to do with this app's code),
+   it automatically retries from jsDelivr's independent npm mirror before
+   giving up - so a block on one CDN alone doesn't disable sign-up/login.
+   ============================================================ */
+var fbAuth=null, fbCreateUser=null, fbSignIn=null, fbSignOut=null, fbResetPassword=null, fbSendVerification=null, firebaseReady=false, firebaseInitError=null;
+async function importWithFallback(primaryUrl, fallbackUrl){
+  try{ return await import(primaryUrl); }
+  catch(e1){
+    try{ return await import(fallbackUrl); }
+    catch(e2){ throw e2; }
+  }
+}
+var firebaseInitPromise=(async function(){
+  try{
+    var appMod=await importWithFallback(
+      "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js",
+      "https://cdn.jsdelivr.net/npm/firebase@10.13.0/app/+esm"
+    );
+    var authMod=await importWithFallback(
+      "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js",
+      "https://cdn.jsdelivr.net/npm/firebase@10.13.0/auth/+esm"
+    );
+    var firebaseConfig={
+      apiKey:"AIzaSyDm-Th9ktgcCOiHKHWMFVheobnd7l7cnbs",
+      authDomain:"basya-441d4.firebaseapp.com",
+      projectId:"basya-441d4",
+      storageBucket:"basya-441d4.firebasestorage.app",
+      messagingSenderId:"913021173",
+      appId:"1:913021173:web:3f0abad48dacf63ed04dbc",
+      measurementId:"G-6XJ54ZZPR9"
+    };
+    var fbApp=appMod.initializeApp(firebaseConfig);
+    fbAuth=authMod.getAuth(fbApp);
+    fbCreateUser=authMod.createUserWithEmailAndPassword;
+    fbSignIn=authMod.signInWithEmailAndPassword;
+    fbSignOut=authMod.signOut;
+    fbResetPassword=authMod.sendPasswordResetEmail;
+    fbSendVerification=authMod.sendEmailVerification;
+    firebaseReady=true;
+  }catch(e){
+    firebaseInitError = (e && e.message) ? e.message : String(e);
+    console.warn('Firebase could not be loaded from either CDN - real account creation/login is disabled, the rest of the app still works. Underlying error:', e);
+    firebaseReady=false;
+  }
+})();
+function firebaseErrorMessage(err){
+  var code=err && err.code ? err.code : '';
+  var map={
+    'auth/invalid-email':'That email address looks invalid.',
+    'auth/email-already-in-use':'This email is already registered — try Log in instead.',
+    'auth/weak-password':'Use at least 6 characters for your password.',
+    'auth/user-not-found':'No account found for this email.',
+    'auth/wrong-password':'Incorrect password. Please try again.',
+    'auth/invalid-credential':'Incorrect email or password.',
+    'auth/too-many-requests':'Too many attempts — please try again later.',
+    'auth/network-request-failed':'Network error — check your connection and try again.'
+  };
+  return map[code] || (err && err.message ? err.message : 'Something went wrong. Please try again.');
+}
+async function firebaseCreateAccount(email,password){
+  await firebaseInitPromise;
+  if(!firebaseReady) throw { code:'', message:'Account creation is temporarily unavailable (could not reach Firebase). Reason: '+(firebaseInitError||'unknown')+'. Open the browser console (F12) for the full error, or see the troubleshooting notes.' };
+  return await fbCreateUser(fbAuth, email, password);
+}
+async function firebaseLogIn(email,password){
+  await firebaseInitPromise;
+  if(!firebaseReady) throw { code:'', message:'Sign-in is temporarily unavailable (could not reach Firebase). Reason: '+(firebaseInitError||'unknown')+'. Open the browser console (F12) for the full error, or see the troubleshooting notes.' };
+  return await fbSignIn(fbAuth, email, password);
+}
+async function firebaseResetPassword(email){
+  await firebaseInitPromise;
+  if(!firebaseReady) throw { code:'', message:'Password reset is temporarily unavailable (could not reach Firebase). Reason: '+(firebaseInitError||'unknown')+'.' };
+  return await fbResetPassword(fbAuth, email);
+}
+/* Sends a real verification email after signup. Non-blocking by design:
+   if it fails (network hiccup, etc) the new account still gets full
+   access immediately - this mirrors many production apps that verify
+   "softly" rather than locking new users out of their own feed. */
+async function firebaseSendVerification(user){
+  await firebaseInitPromise;
+  if(!firebaseReady || !fbSendVerification) return;
+  try{ await fbSendVerification(user); }catch(e){ console.warn('Could not send verification email:', e); }
+}
+
+/* ============================================================
+   DICTIONARY (English -> Russian)
+   ============================================================ */
+var COUNTRIES=[
+  {flag:'🇺🇸',name:'United States'},{flag:'🇬🇧',name:'United Kingdom'},{flag:'🇨🇦',name:'Canada'},
+  {flag:'🇦🇺',name:'Australia'},{flag:'🇩🇪',name:'Germany'},{flag:'🇫🇷',name:'France'},
+  {flag:'🇪🇸',name:'Spain'},{flag:'🇮🇹',name:'Italy'},{flag:'🇵🇹',name:'Portugal'},
+  {flag:'🇳🇱',name:'Netherlands'},{flag:'🇧🇪',name:'Belgium'},{flag:'🇨🇭',name:'Switzerland'},
+  {flag:'🇦🇹',name:'Austria'},{flag:'🇸🇪',name:'Sweden'},{flag:'🇳🇴',name:'Norway'},
+  {flag:'🇩🇰',name:'Denmark'},{flag:'🇫🇮',name:'Finland'},{flag:'🇮🇪',name:'Ireland'},
+  {flag:'🇵🇱',name:'Poland'},{flag:'🇨🇿',name:'Czech Republic'},{flag:'🇬🇷',name:'Greece'},
+  {flag:'🇹🇷',name:'Turkey'},{flag:'🇺🇦',name:'Ukraine'},{flag:'🇷🇺',name:'Russia'},
+  {flag:'🇰🇿',name:'Kazakhstan'},{flag:'🇺🇿',name:'Uzbekistan'},{flag:'🇰🇬',name:'Kyrgyzstan'},
+  {flag:'🇦🇿',name:'Azerbaijan'},{flag:'🇬🇪',name:'Georgia'},{flag:'🇦🇲',name:'Armenia'},
+  {flag:'🇮🇳',name:'India'},{flag:'🇵🇰',name:'Pakistan'},{flag:'🇧🇩',name:'Bangladesh'},
+  {flag:'🇨🇳',name:'China'},{flag:'🇯🇵',name:'Japan'},{flag:'🇰🇷',name:'South Korea'},
+  {flag:'🇮🇩',name:'Indonesia'},{flag:'🇵🇭',name:'Philippines'},{flag:'🇻🇳',name:'Vietnam'},
+  {flag:'🇹🇭',name:'Thailand'},{flag:'🇲🇾',name:'Malaysia'},{flag:'🇸🇬',name:'Singapore'},
+  {flag:'🇦🇪',name:'United Arab Emirates'},{flag:'🇸🇦',name:'Saudi Arabia'},{flag:'🇮🇱',name:'Israel'},
+  {flag:'🇪🇬',name:'Egypt'},{flag:'🇳🇬',name:'Nigeria'},{flag:'🇿🇦',name:'South Africa'},
+  {flag:'🇰🇪',name:'Kenya'},{flag:'🇧🇷',name:'Brazil'},{flag:'🇲🇽',name:'Mexico'},
+  {flag:'🇦🇷',name:'Argentina'},{flag:'🇨🇱',name:'Chile'},{flag:'🇨🇴',name:'Colombia'},
+  {flag:'🇳🇿',name:'New Zealand'}
+];
+
+var DICT = {
+  "ephemeral":"эфемерный, недолговечный","ubiquitous":"вездесущий","serendipity":"счастливая случайность",
+  "eloquent":"красноречивый","resilient":"стойкий, жизнестойкий","ambiguous":"двусмысленный",
+  "meticulous":"дотошный, скрупулёзный","profound":"глубокий, серьёзный","candid":"искренний, откровенный",
+  "elaborate":"тщательно продуманный","tenacious":"упорный, цепкий","nuance":"нюанс, оттенок",
+  "paradox":"парадокс","intricate":"замысловатый, сложный","cognizant":"осведомлённый",
+  "arbitrary":"произвольный","coherent":"связный, последовательный","pragmatic":"прагматичный",
+  "sublime":"возвышенный, величественный","futile":"тщетный, бесполезный","astute":"проницательный",
+  "benevolent":"благожелательный","cathartic":"очищающий, освобождающий","dichotomy":"дихотомия, раздвоение",
+  "empirical":"эмпирический","fickle":"непостоянный, переменчивый","gregarious":"общительный",
+  "hindsight":"взгляд назад, задним числом","impetuous":"импульсивный, порывистый","juxtapose":"сопоставлять",
+  "lucid":"ясный, отчётливый","mundane":"обыденный, приземлённый","notion":"понятие, представление",
+  "obsolete":"устаревший","perpetual":"вечный, непрестанный","quintessential":"типичнейший, образцовый",
+  "resonate":"находить отклик, резонировать","scrutiny":"тщательное изучение","tangible":"осязаемый, ощутимый",
+  "unravel":"распутывать, разгадывать","vindicate":"оправдывать, доказывать правоту","meander":"блуждать, петлять",
+  "solace":"утешение, отрада","serene":"безмятежный, спокойный","waver":"колебаться, дрожать"
+};
+function translateWord(w){ var k=w.toLowerCase(); return DICT[k] ? DICT[k] : "перевод пока недоступен"; }
+var DIGRAPHS=[["th","θ"],["sh","ʃ"],["ch","tʃ"],["ph","f"],["ng","ŋ"],["ck","k"],["qu","kw"],["ee","iː"],["oo","uː"],["ea","iː"],["ou","aʊ"],["ai","eɪ"],["ay","eɪ"],["oa","oʊ"],["igh","aɪ"],["oy","ɔɪ"],["oi","ɔɪ"]];
+var SINGLES={a:"æ",e:"ɛ",i:"ɪ",o:"ɒ",u:"ʌ",y:"i",c:"k",j:"dʒ",x:"ks",w:"w",q:"k"};
+function mockTranscription(word){
+  var w=word.toLowerCase(),out="",i=0;
+  outer: while(i<w.length){
+    for(var d=0;d<DIGRAPHS.length;d++){var p=DIGRAPHS[d]; if(w.substr(i,p[0].length)===p[0]){out+=p[1]; i+=p[0].length; continue outer;}}
+    var ch=w[i]; out += SINGLES[ch]!==undefined?SINGLES[ch]:ch; i++;
+  }
+  return "[ˈ"+out+"]";
+}
+/* Offline dictionary first; falls back to two live public APIs (phonetics
+   from the Free Dictionary API, Russian translation from MyMemory) with a
+   graceful offline fallback if either request fails. */
+async function fetchLivePhonetic(word){
+  try{
+    var res=await fetch('https://api.dictionaryapi.dev/api/v2/entries/en/'+encodeURIComponent(word));
+    if(!res.ok) return null;
+    var json=await res.json();
+    if(Array.isArray(json) && json[0]){
+      var text=json[0].phonetic;
+      if(!text && Array.isArray(json[0].phonetics)){ var wt=json[0].phonetics.find(function(p){return p.text;}); if(wt) text=wt.text; }
+      if(text) return (text.charAt(0)==='['||text.charAt(0)==='/') ? text : '['+text+']';
+    }
+  }catch(e){}
+  return null;
+}
+async function fetchLiveTranslation(word){
+  try{
+    var res=await fetch('https://api.mymemory.translated.net/get?q='+encodeURIComponent(word)+'&langpair=en|ru');
+    if(!res.ok) return null;
+    var json=await res.json();
+    if(json && json.responseData && json.responseData.translatedText){
+      var text=json.responseData.translatedText;
+      if(text && text.toLowerCase().indexOf('invalid')===-1) return text;
+    }
+  }catch(e){}
+  return null;
+}
+async function getWordData(word){
+  var key=word.toLowerCase();
+  if(DICT[key]) return { word:word, transcription:mockTranscription(word), translation:DICT[key] };
+  var r=await Promise.all([fetchLivePhonetic(word), fetchLiveTranslation(word)]);
+  return { word:word, transcription:r[0]||mockTranscription(word), translation:r[1]||'перевод пока недоступен' };
+}
+
+/* ============================================================
+   STORAGE
+   ============================================================ */
+var LS={users:'basya_users',posts:'basya_posts',session:'basya_session',dict:'basya_dictionary',reposts:'basya_reposts',notif:'basya_notifications',history:'basya_search_history'};
+function load(k,f){ try{ var r=localStorage.getItem(k); return r?JSON.parse(r):f; }catch(e){ return f; } }
+function save(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); }catch(e){ alert('Storage is full. Try removing an old photo before saving a new one.'); } }
+function uid(p){ return p+'_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,8); }
+function hashStr(s){ var h=0; for(var i=0;i<s.length;i++){h=(h<<5)-h+s.charCodeAt(i); h|=0;} return h; }
+function slugify(name){ return name.toLowerCase().replace(/[^a-z0-9]/g,''); }
+function pick(arr,i){ return arr[i % arr.length]; }
+
+function defaultAvatar(seed){
+  var colors=['#2F5D3A','#B24A2E','#3B5A8A','#8A5A3B','#6A4C93','#1B7A6E'];
+  var c=colors[Math.abs(hashStr(seed))%colors.length];
+  var svg="<svg xmlns='http://www.w3.org/2000/svg' width='80' height='80'><rect width='80' height='80' fill='"+c+"'/><text x='40' y='50' font-size='30' fill='#fff' text-anchor='middle' font-family='Lora, serif'>"+(seed?seed.charAt(0).toUpperCase():'?')+"</text></svg>";
+  return 'data:image/svg+xml;base64,'+btoa(unescape(encodeURIComponent(svg)));
+}
+/* Category avatars: a colored circle with a large centered emoji, encoded as
+   a Base64 SVG data URI - no external image requests, tiny LocalStorage footprint. */
+function emojiAvatar(emoji,colorSeed){
+  var colors=['#2F5D3A','#B24A2E','#3B5A8A','#8A5A3B','#6A4C93','#1B7A6E','#A9822E','#4C6B8A','#7A3B5A'];
+  var c=colors[Math.abs(hashStr(colorSeed))%colors.length];
+  var svg="<svg xmlns='http://www.w3.org/2000/svg' width='80' height='80'><rect width='80' height='80' rx='40' fill='"+c+"'/><text x='40' y='52' font-size='36' text-anchor='middle'>"+emoji+"</text></svg>";
+  return 'data:image/svg+xml;base64,'+btoa(unescape(encodeURIComponent(svg)));
+}
+
+/* ============================================================
+   DYNAMIC SEED: ~30 accounts across 9 thematic categories,
+   each category with one flagship essay, nested comments and tags.
+   ============================================================ */
+var CATEGORIES=[
+  { key:'art', label:'Art & Design', emoji:'🎨', tags:['art','design','minimalism'],
+    title:'The Discipline of Empty Space',
+    body:'Every design student learns to fill the canvas before they learn the harder skill: knowing when to stop. Negative space is not an absence of decision, it is the decision - the part of the composition doing the quietest, hardest work.\n\nI spent years crowding my layouts because empty space felt like failure, like I hadn\'t tried hard enough. It took a mentor pointing at a page I\'d over-designed to make me see it: the eye needs somewhere to rest, or nothing on the page gets to matter more than anything else.',
+    bios:['Illustrator exploring negative space and quiet compositions.','Graphic designer obsessed with type, grids, and restraint.','Visual artist working mostly in ink and unfinished sketches.'] },
+  { key:'wildlife', label:'Wildlife & Animals', emoji:'🦁', tags:['wildlife','nature','animals'],
+    title:'What the Migration Taught Me About Patience',
+    body:'We waited eleven days at the river crossing before the herd finally moved. Wildlife photography rewards almost nobody who isn\'t willing to be bored first - the crocodiles were patient, the guides were patient, and eventually I learned to be patient too.\n\nWhat struck me wasn\'t the crossing itself, dramatic as it was, but the stillness beforehand: thousands of animals sensing a threshold, waiting for a signal none of us could see, trusting an instinct built over more generations than I could count.',
+    bios:['Field biologist who spends more nights in a tent than a bed.','Conservation photographer documenting migration routes.','Zoologist writing about animal behavior for curious non-scientists.'] },
+  { key:'studyabroad', label:'Study Abroad & University Admissions', emoji:'🎓', tags:['studyabroad','university','admissions'],
+    title:'The Essay That Almost Didn\'t Get Written',
+    body:'I rewrote my personal statement fourteen times, and the version that finally worked was the one I almost didn\'t submit - too honest, I thought, too small a story for such a big application. It was about losing a spelling bee, not winning one.\n\nAdmissions officers read thousands of essays about triumphs. What they remember are the ones that sound like an actual person thinking, not a resume in prose. My advice to every applicant now: write the true small story before you write the impressive big one.',
+    bios:['Admissions consultant who has read several thousand personal statements.','Exchange student turned mentor for first-generation applicants.','University counselor writing about the parts nobody tells you.'] },
+  { key:'tech', label:'Tech & Coding', emoji:'💻', tags:['tech','coding','softwareengineering'],
+    title:'Why Your First Refactor Is Always Wrong',
+    body:'The first time you refactor a messy codebase, you will refactor it toward the wrong abstraction, because you don\'t yet understand the problem well enough to know the right one. This isn\'t a failure of skill - it is the only order in which understanding actually arrives.\n\nSenior engineers aren\'t people who get the abstraction right the first time. They are people who\'ve made peace with rewriting it a second and third time, and who\'ve learned to keep the blast radius of each rewrite small enough to survive being wrong.',
+    bios:['Backend engineer who has rewritten the same service three times.','Software architect writing about the messy parts of shipping code.','Self-taught developer documenting the long way to fluency.'] },
+  { key:'culinary', label:'Culinary Arts', emoji:'🍳', tags:['culinary','cooking','food'],
+    title:'The Five-Minute Sauce Nobody Believes Is Real',
+    body:'Beurre blanc has a reputation for being temperamental, restaurant-only, the kind of thing you order rather than attempt. It is, in fact, shallots, wine vinegar, and cold butter whisked in gradually over low heat - five minutes, no special equipment, no excuses.\n\nWhat makes people afraid of French sauces isn\'t the technique, it\'s the mythology built up around them. Once you break an emulsion once and fix it, the fear disappears, and what\'s left is just a very good use of butter.',
+    bios:['Line cook turned recipe writer, still burns toast occasionally.','Culinary school graduate demystifying restaurant technique at home.','Food writer chasing the five ingredients that actually matter.'] },
+  { key:'travel', label:'Travel & Photography', emoji:'✈️', tags:['travel','photography'],
+    title:'Shooting Wide When Everyone Else Zooms In',
+    body:'Every other camera at the overlook was zoomed in tight on the waterfall. I put on the widest lens I owned and stepped back until the falls became a detail in a much larger, stranger landscape - the tourists, the mist, the impossibly green cliffside nobody was photographing.\n\nThe obvious shot is obvious because everyone takes it. The interesting one is usually standing a little further back, looking at what the postcard crops out.',
+    bios:['Travel photographer who prefers overlooked towns to famous ones.','Backpacker documenting slow travel across small budgets.','Landscape photographer chasing weather more than destinations.'] },
+  { key:'mentalhealth', label:'Mental Health', emoji:'🧠', tags:['mentalhealth','wellbeing'],
+    title:'The Difference Between Rest and Numbing',
+    body:'For a long time I called it "resting" when what I was actually doing was numbing - scrolling until my brain went quiet, not because I was recovering but because I had stopped feeling anything at all. Real rest, it turns out, usually involves being present for a while, not absent.\n\nThe test I use now: does this activity leave me with more capacity afterward, or just less awareness of how little I had to begin with? It\'s a small distinction that changed how I spend my evenings.',
+    bios:['Therapist writing plainly about the ordinary parts of mental health.','Wellbeing coach interested in habits more than hacks.','Writer documenting a slow, unglamorous recovery.'] },
+  { key:'philosophy', label:'Philosophy', emoji:'🏛️', tags:['philosophy','ethics'],
+    title:'Why Certainty Is the Least Interesting Goal',
+    body:'Philosophy students often arrive wanting answers and leave suspicious of anyone who offers them too quickly. That suspicion isn\'t cynicism - it\'s the beginning of actual thinking, the recognition that a settled question stops being examined.\n\nThe philosophers I return to aren\'t the ones who convinced me of something, but the ones who made my previous certainty feel less solid than I\'d assumed. That discomfort, held onto rather than resolved, is closer to the point than any conclusion.',
+    bios:['Philosophy lecturer trying to make old arguments feel urgent again.','Independent writer working through ethics one essay at a time.','Graduate student obsessed with questions nobody has settled.'] },
+  { key:'literature', label:'Literature', emoji:'📚', tags:['literature','books'],
+    title:'Rereading the Book That Bored You at Twenty',
+    body:'I hated this novel in university - assigned, dense, seemingly about nothing. I picked it up again a decade later expecting to confirm my old verdict and found, instead, that the book hadn\'t changed at all. I had.\n\nWhat bores a twenty-year-old reader is very often what a thirty-five-year-old reader needs most: patience with interiority, tolerance for a plot that refuses to hurry, trust that meaning can arrive slowly instead of being delivered on schedule.',
+    bios:['Literature teacher who rereads more than she reads new books.','Book critic interested in why old opinions don\'t always hold up.','Novelist writing essays between drafts of a difficult second book.'] }
+];
+var NAME_POOL=["Nora Fielding","Marcus Wren","Priya Kapoor","Elliot Cross","Amara Dubois","Felix Renner","Ines Solano","Callum Ashby","Yuki Tanaka","Sofia Marchetti","Owen Blackwood","Layla Haddad","Theo Bergman","Ruth Okafor","Dmitri Volkov","Clara Whitfield","Malik Johnson","Ingrid Solheim","Pablo Reyes","Naomi Chen","August Lindqvist","Priscilla Adeyemi","Hugo Lindstrom","Mei Lin","Gabriel Souza","Freya Nilsen","Tariq Amir","Rosalind Hale","Kenji Watanabe","Delphine Roche"];
+var COMMENT_TEMPLATES=[
+  'This is exactly the kind of nuance I never see written down - thank you for putting words to it.',
+  'I disagree slightly, but I love how clearly you laid out the reasoning here.',
+  'Saving this. I\'ve been circling this idea for months without being able to name it.',
+  'The specific example you used really landed for me, more than the general point did.',
+  'Curious how this holds up outside your own field - would love a follow-up.',
+  'This reframed something I\'d been thinking about all wrong.'
+];
+var REPLY_TEMPLATES=[
+  'Glad it resonated - I almost cut that part before publishing.',
+  'Fair pushback, I think you\'re right that it depends a lot on context.',
+  'That\'s a good question, I don\'t have a clean answer yet.',
+  'Appreciate you reading closely enough to catch that.'
+];
+
+function seedIfEmpty(){
+  var users=load(LS.users,null);
+  var posts=load(LS.posts,null);
+  if(!users || !posts){
+    users=[]; posts=[];
+    var usersByCategory={};
+    for(var i=0;i<NAME_POOL.length;i++){
+      var cat=CATEGORIES[i % CATEGORIES.length];
+      var name=NAME_POOL[i];
+      var bio=pick(cat.bios, Math.floor(i/CATEGORIES.length));
+      var u={ id:uid('u'), name:name, username:slugify(name), email:slugify(name)+'@demo.io', password:'demo',
+        bio:bio, avatar:emojiAvatar(cat.emoji,name), categoryKey:cat.key, following:[], followers:[] };
+      users.push(u);
+      if(!usersByCategory[cat.key]) usersByCategory[cat.key]=[];
+      usersByCategory[cat.key].push(u);
+    }
+    /* light social graph: everyone follows the next two people in the list */
+    for(var j=0;j<users.length;j++){
+      var a=users[j], b=users[(j+1)%users.length], c=users[(j+2)%users.length];
+      a.following.push(b.id,c.id);
+      b.followers.push(a.id); c.followers.push(a.id);
+    }
+    /* one flagship essay per category, authored by that category's first user */
+    for(var k=0;k<CATEGORIES.length;k++){
+      var cat=CATEGORIES[k];
+      var author=usersByCategory[cat.key][0];
+      var peers=usersByCategory[cat.key].concat(usersByCategory[CATEGORIES[(k+1)%CATEGORIES.length].key]);
+      var likeCount=4+(k%4);
+      var likes=[];
+      for(var l=0;l<likeCount;l++) likes.push(pick(peers,l+k).id);
+      var comments=[];
+      for(var m=0;m<3;m++){
+        var cUser=pick(peers,m+2);
+        var topId=uid('c');
+        comments.push({ id:topId, userId:cUser.id, text:pick(COMMENT_TEMPLATES,m+k), date:Date.now()-(m+2)*3600000, likes:[author.id], parentId:null });
+        if(m<2){
+          var rUser=pick(peers,m+5);
+          comments.push({ id:uid('c'), userId:rUser.id===cUser.id?author.id:rUser.id, text:pick(REPLY_TEMPLATES,m), date:Date.now()-(m+1)*3600000, likes:[], parentId:topId });
+        }
+      }
+      posts.push({ id:uid('p'), authorId:author.id, title:cat.title, tags:cat.tags.slice(), content:cat.body,
+        images:[], likes:likes, bookmarks:[], reposts:[], comments:comments, date:Date.now()-(k+1)*20*3600000 });
+    }
+    save(LS.users,users);
+    save(LS.posts,posts);
+  }
+  if(!load(LS.dict,null)) save(LS.dict,[]);
+  if(!load(LS.reposts,null)) save(LS.reposts,[]);
+  if(!load(LS.notif,null)) save(LS.notif,{});
+  if(!load(LS.history,null)) save(LS.history,[]);
+}
+seedIfEmpty();
+
+function getUsers(){ return load(LS.users,[]); }
+function setUsers(u){ save(LS.users,u); }
+function getPosts(){ return load(LS.posts,[]); }
+function setPosts(p){ save(LS.posts,p); }
+function getUserById(id){ return getUsers().find(function(u){return u.id===id;}); }
+function getDict(){ return load(LS.dict,[]); }
+function setDict(d){ save(LS.dict,d); }
+function getFeedReposts(){ return load(LS.reposts,[]); }
+function setFeedReposts(r){ save(LS.reposts,r); }
+function getAllNotif(){ return load(LS.notif,{}); }
+function getNotifFor(userId){ var all=getAllNotif(); return all[userId]||[]; }
+function setNotifFor(userId,list){ var all=getAllNotif(); all[userId]=list; save(LS.notif,all); }
+function getSearchHistory(){ return load(LS.history,[]); }
+function setSearchHistory(list){ save(LS.history,list); }
+
+function getSession(){ return load(LS.session,null); }
+function setSession(userId){ save(LS.session,{userId:userId}); }
+function currentUser(){ var s=getSession(); return s?getUserById(s.userId):null; }
+function avatarSrc(u){ return u && u.avatar ? u.avatar : defaultAvatar(u?u.name:'?'); }
+
+var MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function smartDate(ts){
+  var diffMs=Date.now()-ts, diffDays=Math.floor(diffMs/86400000);
+  if(diffDays<5){
+    var s=Math.floor(diffMs/1000);
+    if(s<60) return 'just now';
+    if(s<3600) return Math.floor(s/60)+'m ago';
+    if(s<86400) return Math.floor(s/3600)+'h ago';
+    return diffDays+(diffDays===1?' day ago':' days ago');
+  }
+  var d=new Date(ts); return MONTHS[d.getMonth()]+' '+d.getDate();
+}
+function escapeHtml(s){ return (s||'').replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
+function endOfListFooter(){ return '<div class="end-of-list">That\'s all for now.</div>'; }
+
+function compressImageFile(file,maxDim,quality,cb){
+  var reader=new FileReader();
+  reader.onload=function(ev){
+    var img=new Image();
+    img.onload=function(){
+      var w=img.width,h=img.height,scale=Math.min(1,maxDim/Math.max(w,h));
+      var cw=Math.round(w*scale),ch=Math.round(h*scale);
+      var canvas=document.createElement('canvas'); canvas.width=cw; canvas.height=ch;
+      var ctx=canvas.getContext('2d'); ctx.drawImage(img,0,0,cw,ch);
+      var dataUrl; try{ dataUrl=canvas.toDataURL('image/jpeg',quality); }catch(e){ dataUrl=ev.target.result; }
+      cb(dataUrl);
+    };
+    img.onerror=function(){ cb(ev.target.result); };
+    img.src=ev.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+/* ============================================================
+   AUTH / ONBOARDING — classic Firebase Email/Password sign-up & sign-in.
+   No emails, no links, no codes: "Create Account" calls
+   createUserWithEmailAndPassword directly and drops the user straight
+   onto the Feed; "Log In" calls signInWithEmailAndPassword the same way.
+   ============================================================ */
+var reg={email:'',firebaseUid:null};
+var selectedCountry={su:null,rec:null};
+function showStep(id){ document.querySelectorAll('.onboard-step').forEach(function(s){s.classList.remove('active');}); document.getElementById(id).classList.add('active'); }
+document.querySelectorAll('.back-btn').forEach(function(b){ b.addEventListener('click',function(){ showStep(b.dataset.back); }); });
+document.getElementById('get-started-btn').addEventListener('click',function(){ showStep('ob-signup1'); });
+document.getElementById('go-login').addEventListener('click',function(){ showStep('ob-login'); });
+function setErr(id,msg){ document.getElementById(id).textContent=msg||''; }
+
+document.getElementById('su-pw-eye').addEventListener('click',function(){ var inp=document.getElementById('su-password'); inp.type=inp.type==='password'?'text':'password'; });
+document.getElementById('li-pw-eye').addEventListener('click',function(){ var inp=document.getElementById('li-password'); inp.type=inp.type==='password'?'text':'password'; });
+
+/* ---------- country picker (shared modal, used by Sign Up and the Recovery step) ---------- */
+function openCountryPicker(context){
+  var listEl=document.getElementById('country-modal-list');
+  listEl.innerHTML=COUNTRIES.map(function(c,i){ return '<button type="button" class="country-row" data-index="'+i+'"><span class="country-flag">'+c.flag+'</span><span>'+c.name+'</span></button>'; }).join('');
+  listEl.querySelectorAll('.country-row').forEach(function(btn){
+    btn.addEventListener('click',function(){
+      var c=COUNTRIES[parseInt(btn.dataset.index,10)];
+      selectedCountry[context]=c;
+      document.getElementById(context+'-country-label').textContent=c.flag+' '+c.name;
+      document.getElementById(context+'-country-btn').classList.remove('placeholder');
+      setErr(context+'-country-error','');
+      document.getElementById('modal-country').classList.add('hidden');
+    });
+  });
+  document.getElementById('modal-country').classList.remove('hidden');
+}
+document.getElementById('su-country-btn').addEventListener('click',function(){ openCountryPicker('su'); });
+document.getElementById('rec-country-btn').addEventListener('click',function(){ openCountryPicker('rec'); });
+document.getElementById('country-modal-close').addEventListener('click',function(){ document.getElementById('modal-country').classList.add('hidden'); });
+document.getElementById('modal-country').addEventListener('click',function(e){ if(e.target.id==='modal-country') e.currentTarget.classList.add('hidden'); });
+
+document.getElementById('su-register').addEventListener('click',function(){
+  var email=document.getElementById('su-email').value.trim();
+  var password=document.getElementById('su-password').value;
+  var username=document.getElementById('su-username').value.trim();
+  var age=parseInt(document.getElementById('su-age').value,10);
+  setErr('su-email-error',''); setErr('su-password-error',''); setErr('su-username-error',''); setErr('su-age-error',''); setErr('su-country-error','');
+  var ok=true;
+  if(!email){ setErr('su-email-error','Email is required.'); ok=false; }
+  else if(email.indexOf('@')===-1 || email.indexOf('.')===-1){ setErr('su-email-error','Enter a valid email address.'); ok=false; }
+  else{ var emailTaken=getUsers().some(function(u){ return u.email && u.email.toLowerCase()===email.toLowerCase(); }); if(emailTaken){ setErr('su-email-error','This email is already registered — try Log in instead.'); ok=false; } }
+  if(!password){ setErr('su-password-error','Password is required.'); ok=false; }
+  else if(password.length<6){ setErr('su-password-error','Use at least 6 characters.'); ok=false; }
+  if(!username){ setErr('su-username-error','Username is required.'); ok=false; }
+  else if(!/^[a-zA-Z0-9_]{3,20}$/.test(username)){ setErr('su-username-error','3-20 letters, numbers or underscore.'); ok=false; }
+  else{ var taken=getUsers().some(function(u){ return u.username && u.username.toLowerCase()===username.toLowerCase(); }); if(taken){ setErr('su-username-error','This username is already taken.'); ok=false; } }
+  if(!age || age<13){ setErr('su-age-error','Please enter a valid age (13+).'); ok=false; }
+  if(!selectedCountry.su){ setErr('su-country-error','Please select your country.'); ok=false; }
+  if(!ok) return;
+  var btn=this; var original=btn.textContent; btn.textContent='Creating account…'; btn.disabled=true;
+  firebaseCreateAccount(email, password).then(function(cred){
+    btn.textContent=original; btn.disabled=false;
+    var users=getUsers();
+    var newUser={ id:uid('u'), name:username, username:username, email:email, firebaseUid:cred.user.uid, age:age, country:selectedCountry.su.flag+' '+selectedCountry.su.name, bio:'New to BASYA.', avatar:null, following:[], followers:[] };
+    users.push(newUser); setUsers(users); setSession(newUser.id);
+    notifyWelcome(newUser.id);
+    firebaseSendVerification(cred.user);
+    pushNotification(newUser.id,'verify','We\'ve sent a verification email to '+email+' — please confirm it when you get a chance.');
+    document.getElementById('onboarding').style.display='none';
+    bootApp();
+  }).catch(function(err){
+    btn.textContent=original; btn.disabled=false;
+    setErr('su-email-error', firebaseErrorMessage(err));
+  });
+});
+
+/* Rare-recovery step: only reached when a real Firebase login succeeds but
+   this browser has no local profile for that email (e.g. LocalStorage was
+   cleared, or a different device was used). The Firebase account itself
+   already exists at this point - we're only rebuilding the local profile,
+   never calling createUserWithEmailAndPassword a second time. */
+document.getElementById('rec-finish').addEventListener('click',function(){
+  var username=document.getElementById('rec-username').value.trim();
+  var age=parseInt(document.getElementById('rec-age').value,10);
+  setErr('rec-username-error',''); setErr('rec-age-error',''); setErr('rec-country-error','');
+  var ok=true;
+  if(!username){ setErr('rec-username-error','Username is required.'); ok=false; }
+  else if(!/^[a-zA-Z0-9_]{3,20}$/.test(username)){ setErr('rec-username-error','3-20 letters, numbers or underscore.'); ok=false; }
+  else{ var taken=getUsers().some(function(u){ return u.username && u.username.toLowerCase()===username.toLowerCase(); }); if(taken){ setErr('rec-username-error','This username is already taken.'); ok=false; } }
+  if(!age || age<13){ setErr('rec-age-error','Please enter a valid age (13+).'); ok=false; }
+  if(!selectedCountry.rec){ setErr('rec-country-error','Please select your country.'); ok=false; }
+  if(!ok) return;
+  var users=getUsers();
+  var newUser={ id:uid('u'), name:username, username:username, email:reg.email, firebaseUid:reg.firebaseUid||null, age:age, country:selectedCountry.rec.flag+' '+selectedCountry.rec.name, bio:'New to BASYA.', avatar:null, following:[], followers:[] };
+  users.push(newUser); setUsers(users); setSession(newUser.id);
+  notifyWelcome(newUser.id);
+  document.getElementById('onboarding').style.display='none';
+  bootApp();
+});
+
+document.getElementById('forgot-password-btn').addEventListener('click',function(){
+  var email=document.getElementById('li-email').value.trim();
+  setErr('li-error','');
+  if(!email || email.indexOf('@')===-1){ setErr('li-error','Enter your email above first, then tap "Forgot Password?" again.'); return; }
+  var btn=this; var original=btn.textContent; btn.textContent='Sending…'; btn.disabled=true;
+  firebaseResetPassword(email).then(function(){
+    btn.textContent=original; btn.disabled=false;
+    document.getElementById('reset-banner').classList.remove('hidden');
+  }).catch(function(err){
+    btn.textContent=original; btn.disabled=false;
+    setErr('li-error', firebaseErrorMessage(err));
+  });
+});
+
+document.getElementById('li-submit').addEventListener('click',function(){
+  var email=document.getElementById('li-email').value.trim();
+  var password=document.getElementById('li-password').value;
+  setErr('li-error','');
+  document.getElementById('reset-banner').classList.add('hidden');
+  if(!email || !password){ setErr('li-error','Both fields are required.'); return; }
+  var btn=this; var original=btn.textContent; btn.textContent='Signing in…'; btn.disabled=true;
+  firebaseLogIn(email, password).then(function(cred){
+    btn.textContent=original; btn.disabled=false;
+    var existing=getUsers().find(function(u){ return u.email && u.email.toLowerCase()===email.toLowerCase(); });
+    if(existing){
+      existing.firebaseUid=cred.user.uid;
+      var users=getUsers(); var idx=users.findIndex(function(u){return u.id===existing.id;}); users[idx]=existing; setUsers(users);
+      setSession(existing.id);
+      document.getElementById('onboarding').style.display='none';
+      bootApp();
+    } else {
+      /* Firebase knows this account but this browser has no local profile for
+         it yet - finish the profile once more, without creating a second
+         Firebase account. */
+      reg.email=email; reg.firebaseUid=cred.user.uid;
+      document.getElementById('rec-username').value=''; document.getElementById('rec-age').value='';
+      selectedCountry.rec=null;
+      document.getElementById('rec-country-label').textContent='Select your country';
+      document.getElementById('rec-country-btn').classList.add('placeholder');
+      setErr('rec-username-error',''); setErr('rec-age-error',''); setErr('rec-country-error','');
+      showStep('ob-recover');
+    }
+  }).catch(function(err){
+    btn.textContent=original; btn.disabled=false;
+    setErr('li-error', firebaseErrorMessage(err));
+  });
+});
+
+/* ============================================================
+   NOTIFICATIONS: real events only.
+   A brand-new account gets exactly one warm welcome notification.
+   Beyond that, alerts only fire from genuine in-app activity: when
+   the current user publishes a post or leaves a comment, a random
+   other BASYA account "discovers" it shortly after (mirroring how a
+   real social feed would surface it to other readers) and likes it -
+   that like is a real, persisted interaction (it's added to the
+   post's/comment's own likes array), not a fabricated notification.
+   ============================================================ */
+function notifyWelcome(userId){
+  setNotifFor(userId, [{ id:uid('n'), type:'welcome', text:'Welcome to BASYA! We are thrilled to have you here. Start reading and expanding your vocabulary — one story at a time.', date:Date.now(), read:false }]);
+}
+function pushNotification(userId,type,text){
+  var list=getNotifFor(userId);
+  list.push({ id:uid('n'), type:type, text:text, date:Date.now(), read:false });
+  setNotifFor(userId,list);
+  if(currentUser() && currentUser().id===userId) updateNotifBadge();
+}
+function simulateLikeOnPost(postId){
+  var me=currentUser(); if(!me) return;
+  setTimeout(function(){
+    var posts=getPosts(); var post=posts.find(function(p){return p.id===postId;}); if(!post) return;
+    var others=getUsers().filter(function(u){ return u.id!==me.id; }); if(!others.length) return;
+    var liker=others[Math.floor(Math.random()*others.length)];
+    if(post.likes.indexOf(liker.id)>-1) return;
+    post.likes.push(liker.id); setPosts(posts);
+    pushNotification(me.id,'like',liker.name+' liked your post');
+    rerenderAllInstancesOf(postId);
+  }, 2600+Math.random()*2000);
+}
+function simulateLikeOnComment(postId,commentId){
+  var me=currentUser(); if(!me) return;
+  setTimeout(function(){
+    var posts=getPosts(); var post=posts.find(function(p){return p.id===postId;}); if(!post) return;
+    var comment=post.comments.find(function(c){return c.id===commentId;}); if(!comment) return;
+    var others=getUsers().filter(function(u){ return u.id!==me.id; }); if(!others.length) return;
+    var liker=others[Math.floor(Math.random()*others.length)];
+    if(comment.likes.indexOf(liker.id)>-1) return;
+    comment.likes.push(liker.id); setPosts(posts);
+    pushNotification(me.id,'like',liker.name+' liked your comment');
+    var drawer=document.querySelector('.comments-drawer[data-post-id="'+postId+'"]');
+    if(drawer && drawer.classList.contains('open')) renderCommentsList(postId,drawer.querySelector('.comments-list'));
+  }, 2600+Math.random()*2000);
+}
+function checkAuth(){
+  var session=getSession();
+  if(session && getUserById(session.userId)){ document.getElementById('onboarding').style.display='none'; return true; }
+  document.getElementById('onboarding').style.display='flex'; showStep('ob-welcome'); return false;
+}
+
+/* ============================================================
+   SETTINGS PANEL (slides in from the right) + DARK MODE
+   ============================================================ */
+function openSettings(){ document.getElementById('settings-backdrop').classList.add('active'); document.getElementById('settings-panel').classList.add('active'); }
+function closeSettings(){ document.getElementById('settings-backdrop').classList.remove('active'); document.getElementById('settings-panel').classList.remove('active'); }
+document.getElementById('profile-settings-btn').addEventListener('click',openSettings);
+document.getElementById('settings-close').addEventListener('click',closeSettings);
+document.getElementById('settings-backdrop').addEventListener('click',closeSettings);
+['settings-account-security','settings-privacy','settings-help'].forEach(function(id){
+  document.getElementById(id).addEventListener('click',function(){ alert('This is a demo screen - nothing to configure here yet.'); });
+});
+var THEME_KEY='basya_theme';
+function applyTheme(theme){
+  if(theme==='dark'){ document.documentElement.setAttribute('data-theme','dark'); document.getElementById('dark-mode-toggle').classList.add('on'); }
+  else{ document.documentElement.removeAttribute('data-theme'); document.getElementById('dark-mode-toggle').classList.remove('on'); }
+}
+applyTheme(load(THEME_KEY,'light'));
+document.getElementById('dark-mode-toggle').addEventListener('click',function(){
+  var isDark=document.documentElement.getAttribute('data-theme')==='dark';
+  var next=isDark?'light':'dark';
+  applyTheme(next); save(THEME_KEY,next);
+});
+
+/* ============================================================
+   LOG OUT — real Firebase signOut() plus clearing only the active
+   session state locally. The 30 provisioned accounts, posts, the
+   personal dictionary and everything else in LocalStorage are left
+   untouched, so logging back in (or a different local profile) still
+   finds the same shared world of content.
+   ============================================================ */
+document.getElementById('settings-logout-btn').addEventListener('click',async function(){
+  await firebaseInitPromise;
+  if(firebaseReady && fbAuth && fbSignOut){ try{ await fbSignOut(fbAuth); }catch(e){ console.warn('Firebase sign-out failed, clearing local session anyway.', e); } }
+  window.localStorage.removeItem(LS.session);
+  closeSettings();
+  document.getElementById('onboarding').style.display='flex';
+  showStep('ob-welcome');
+});
+
+/* ============================================================
+   NAVIGATION
+   ============================================================ */
+var viewIds=['feed','words','write','notifications','profile','author'];
+function showView(name){
+  viewIds.forEach(function(v){ document.getElementById('view-'+v).classList.toggle('active',v===name); });
+  document.querySelectorAll('.tab-btn').forEach(function(b){ b.classList.toggle('active',b.dataset.tab===name); });
+  if(name==='feed') renderFeed();
+  if(name==='words') renderWords();
+  if(name==='profile') renderProfile();
+  if(name==='write') resetWriteForm();
+  if(name==='notifications') renderNotifications();
+}
+document.querySelectorAll('.tab-btn').forEach(function(b){ b.addEventListener('click',function(){ showView(b.dataset.tab); }); });
+
+/* ============================================================
+   NOTIFICATIONS
+   ============================================================ */
+function updateNotifBadge(){
+  var me=currentUser(); if(!me) return;
+  var unread=getNotifFor(me.id).filter(function(n){return !n.read;}).length;
+  var badge=document.getElementById('notif-badge');
+  if(unread>0){ badge.textContent=unread>9?'9+':String(unread); badge.classList.remove('hidden'); }
+  else{ badge.classList.add('hidden'); }
+}
+var NOTIF_ICONS={
+  like:'<path d="M12 20s-7-4.35-9.5-8.8C.7 7.6 2.4 4 6 4c2 0 3.5 1.1 4.2 2.4C10.9 5.1 12.4 4 14.4 4 18 4 19.7 7.6 17.9 11.2 15.4 15.65 12 20 12 20z"/>',
+  comment:'<path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/>',
+  follow:'<circle cx="12" cy="8" r="3.5"/><path d="M4.5 20a7.5 7.5 0 0115 0"/>',
+  repost:'<path d="M17 2l4 4-4 4"/><path d="M3 11V9a4 4 0 014-4h14"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v2a4 4 0 01-4 4H3"/>'
+};
+function renderNotifications(){
+  var me=currentUser();
+  var list=getNotifFor(me.id).slice().sort(function(a,b){return b.date-a.date;});
+  var wrap=document.getElementById('notifications-list');
+  if(!list.length){ wrap.innerHTML='<div class="empty-state">No notifications yet.</div>'; }
+  else{
+    wrap.innerHTML=list.map(function(n){
+      return '<div class="notif-row '+(n.read?'':'unread')+'">'+(n.read?'':'<div class="notif-dot"></div>')+
+        '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="var(--ink-soft)" stroke-width="1.8" style="flex-shrink:0;">'+(NOTIF_ICONS[n.type]||'')+'</svg>'+
+        '<div class="flex-1"><div class="text-sm">'+escapeHtml(n.text)+'</div><div class="text-xs mt-0.5" style="color:var(--ink-faint);">'+smartDate(n.date)+'</div></div></div>';
+    }).join('') + endOfListFooter();
+  }
+  var updated=list.map(function(n){ n.read=true; return n; });
+  setNotifFor(me.id,updated);
+  updateNotifBadge();
+}
+
+/* ============================================================
+   FEED (posts + reposts)
+   ============================================================ */
+var expandedPosts={}, openReplyFor={}, repliesOpen={}, TRUNCATE_LEN=200;
+
+function buildFeedItems(){
+  var me=currentUser(), posts=getPosts(), reposts=getFeedReposts();
+  var items=posts.map(function(p){ return {kind:'post',date:p.date,post:p}; });
+  reposts.forEach(function(r){
+    var byMe=r.userId===me.id, followed=me.following.indexOf(r.userId)>-1;
+    if(byMe||followed){ var post=posts.find(function(p){return p.id===r.postId;}); if(post) items.push({kind:'repost',date:r.date,post:post,byUserId:r.userId}); }
+  });
+  items.sort(function(a,b){ return b.date-a.date; });
+  return items;
+}
+function matchesSearch(post,q){
+  if(!q) return true;
+  q=q.trim().toLowerCase();
+  if(!q) return true;
+  if(q[0]==='#'){ var tag=q.slice(1); return (post.tags||[]).some(function(t){ return t.toLowerCase().indexOf(tag)>-1; }); }
+  var hay=(post.title+' '+post.content+' '+(post.tags||[]).join(' ')).toLowerCase();
+  return hay.indexOf(q)>-1;
+}
+function renderFeed(){
+  var wrap=document.getElementById('feed-list');
+  var items=buildFeedItems();
+  if(!items.length){ wrap.innerHTML='<div class="empty-state">No stories yet. Write the first one.</div>'; return; }
+  wrap.innerHTML=items.map(function(item){
+    if(item.kind==='repost'){
+      var byUser=getUserById(item.byUserId)||{name:'Someone'};
+      return '<div class="pt-4"><div class="repost-banner px-[18px]"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 2l4 4-4 4"/><path d="M3 11V9a4 4 0 014-4h14"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg><span>Reposted by '+escapeHtml(byUser.name)+'</span></div>'+renderPostCard(item.post)+'</div>';
+    }
+    return renderPostCard(item.post);
+  }).join('') + endOfListFooter();
+  attachFeedHandlers(wrap);
+}
+
+/* ============================================================
+   SEARCH OVERLAY
+   ============================================================ */
+function addToSearchHistory(query){
+  query=query.trim(); if(!query) return;
+  var list=getSearchHistory().filter(function(q){ return q.toLowerCase()!==query.toLowerCase(); });
+  list.unshift(query); if(list.length>5) list=list.slice(0,5);
+  setSearchHistory(list); renderSearchHistory();
+}
+function removeFromSearchHistory(query){ setSearchHistory(getSearchHistory().filter(function(q){return q!==query;})); renderSearchHistory(); }
+function renderSearchHistory(){
+  var list=getSearchHistory();
+  var section=document.getElementById('search-recent-section');
+  var wrap=document.getElementById('search-recent-list');
+  if(!list.length){ section.classList.add('hidden'); wrap.innerHTML=''; return; }
+  section.classList.remove('hidden');
+  wrap.innerHTML=list.map(function(q){
+    return '<div class="recent-item"><button class="recent-item-btn recent-item-run" data-query="'+escapeHtml(q)+'"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M3 12a9 9 0 109-9"/><path d="M3 4v8h8"/></svg>'+escapeHtml(q)+'</button><button class="recent-del recent-item-del" data-query="'+escapeHtml(q)+'"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>';
+  }).join('');
+  wrap.querySelectorAll('.recent-item-run').forEach(function(b){ b.addEventListener('click',function(){ var q=b.dataset.query; document.getElementById('search-overlay-input').value=q; runSearch(q,true); }); });
+  wrap.querySelectorAll('.recent-item-del').forEach(function(b){ b.addEventListener('click',function(e){ e.stopPropagation(); removeFromSearchHistory(b.dataset.query); }); });
+}
+function runSearch(query,addHistory){
+  var recentSection=document.getElementById('search-recent-section');
+  var resultsWrap=document.getElementById('search-results-list');
+  var q=query.trim();
+  if(!q){ recentSection.classList.toggle('hidden', !getSearchHistory().length); resultsWrap.innerHTML=''; return; }
+  recentSection.classList.add('hidden');
+  var posts=getPosts().filter(function(p){ return matchesSearch(p,q); }).sort(function(a,b){ return b.date-a.date; });
+  if(!posts.length){ resultsWrap.innerHTML='<div class="empty-state">No articles found.</div>'; }
+  else{ resultsWrap.innerHTML=posts.map(renderPostCard).join('')+endOfListFooter(); attachFeedHandlers(resultsWrap); }
+  if(addHistory) addToSearchHistory(q);
+}
+function openSearchOverlay(){
+  document.getElementById('search-overlay').classList.add('active');
+  document.getElementById('search-overlay-input').value='';
+  document.getElementById('search-results-list').innerHTML='';
+  renderSearchHistory();
+  setTimeout(function(){ document.getElementById('search-overlay-input').focus(); },50);
+}
+function closeSearchOverlay(){ document.getElementById('search-overlay').classList.remove('active'); }
+document.getElementById('open-search-btn').addEventListener('click',openSearchOverlay);
+document.getElementById('search-overlay-close').addEventListener('click',closeSearchOverlay);
+document.getElementById('search-overlay-input').addEventListener('input',function(e){ runSearch(e.target.value,false); });
+document.getElementById('search-overlay-input').addEventListener('keydown',function(e){ if(e.key==='Enter'){ runSearch(e.target.value,true); } });
+
+/* ============================================================
+   POST CARD — Author header -> Title -> Carousel -> Body (+truncate) -> Tags
+   Shared verbatim across Feed, Author profile, Bookmarked/Reposts tabs and
+   Search results, so likes/comments/bookmarks/read-more behave identically
+   everywhere a card is rendered.
+   ============================================================ */
+function renderCarousel(images,postId){
+  if(!images || !images.length) return '';
+  var imgs=images.map(function(src){ return '<img src="'+src+'">'; }).join('');
+  var dots = images.length>1 ? '<div class="carousel-dots">'+images.map(function(_,i){ return '<span class="carousel-dot'+(i===0?' active':'')+'"></span>'; }).join('')+'</div>' : '';
+  return '<div class="carousel" data-post-id="'+postId+'">'+imgs+'</div>'+dots;
+}
+function renderPostCard(post){
+  var author=getUserById(post.authorId)||{name:'Unknown',avatar:null};
+  var me=currentUser();
+  var liked=post.likes.indexOf(me.id)>-1, bookmarked=post.bookmarks.indexOf(me.id)>-1, reposted=post.reposts.indexOf(me.id)>-1;
+  var commentCount=post.comments.length;
+  var isExpanded=!!expandedPosts[post.id];
+  var isLong=post.content.length>TRUNCATE_LEN;
+  var shownText=(isLong && !isExpanded) ? post.content.slice(0,TRUNCATE_LEN).trim()+'…' : post.content;
+  var images=post.images||[];
+  var tags=post.tags||[];
+  var tagsHtml = tags.length ? '<div class="mb-1 mt-1">'+tags.map(function(t){ return '<span class="tag-pill">#'+escapeHtml(t)+'</span>'; }).join('')+'</div>' : '';
+
+  return (
+    '<article class="post-card" data-post-id="'+post.id+'">'+
+      /* 1. Author header */
+      '<div class="flex items-center gap-2.5 mb-3 author-row" data-author-id="'+post.authorId+'">'+
+        '<img class="avatar w-8 h-8" src="'+avatarSrc(author)+'">'+
+        '<div class="flex flex-col leading-tight"><span class="text-sm font-semibold">'+escapeHtml(author.name)+'</span><span class="text-xs" style="color:var(--ink-soft);">'+smartDate(post.date)+'</span></div>'+
+      '</div>'+
+      /* 2. Title */
+      '<h2 class="font-headline text-lg mb-2" style="line-height:1.3;">'+escapeHtml(post.title)+'</h2>'+
+      /* 3. Carousel */
+      renderCarousel(images,post.id)+
+      /* 4. Body + truncation */
+      '<p class="font-serif text-[15px] mb-1 selectable-text" style="color:#3B3A34; line-height:1.55; white-space:pre-line;">'+escapeHtml(shownText)+'</p>'+
+      (isLong ? '<button class="read-more-btn read-toggle-btn mb-2" data-post-id="'+post.id+'">'+(isExpanded?'Read less':'Read more')+'</button>' : '<div class="mb-1"></div>')+
+      /* 5. Tags, strictly after the body */
+      tagsHtml+
+      '<div class="flex items-center gap-4 mt-2">'+
+        '<button class="icon-btn like-btn '+(liked?'liked':'')+'" data-post-id="'+post.id+'"><svg viewBox="0 0 24 24" fill="'+(liked?'currentColor':'none')+'" stroke="currentColor" stroke-width="1.8"><path d="M12 20s-7-4.35-9.5-8.8C.7 7.6 2.4 4 6 4c2 0 3.5 1.1 4.2 2.4C10.9 5.1 12.4 4 14.4 4 18 4 19.7 7.6 17.9 11.2 15.4 15.65 12 20 12 20z"/></svg><span>'+post.likes.length+'</span></button>'+
+        '<button class="icon-btn comment-toggle-btn" data-post-id="'+post.id+'"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg><span>'+commentCount+'</span></button>'+
+        '<button class="icon-btn repost-btn '+(reposted?'reposted':'')+'" data-post-id="'+post.id+'"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 2l4 4-4 4"/><path d="M3 11V9a4 4 0 014-4h14"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg><span>'+post.reposts.length+'</span></button>'+
+        '<button class="icon-btn bookmark-btn '+(bookmarked?'bookmarked':'')+' ml-auto" data-post-id="'+post.id+'"><svg viewBox="0 0 24 24" fill="'+(bookmarked?'currentColor':'none')+'" stroke="currentColor" stroke-width="1.8"><path d="M6 4h12v17l-6-4-6 4V4z"/></svg></button>'+
+      '</div>'+
+      '<div class="comments-drawer" data-post-id="'+post.id+'"><div class="pt-3 mt-3" style="border-top:1px solid var(--hair);"><div class="comments-list" data-post-id="'+post.id+'"></div><input type="text" placeholder="Write a comment..." class="comment-input-min comment-input" data-post-id="'+post.id+'"></div></div>'+
+    '</article>'
+  );
+}
+
+/* Every interaction below is delegated from this single function, so any list
+   of post-cards — Feed, Author profile, Bookmarked, Reposts, or Search
+   results — gets fully working likes/comments/bookmarks/reposts/read-more. */
+function attachFeedHandlers(scope){
+  scope.querySelectorAll('.like-btn').forEach(function(b){ b.addEventListener('click',function(){ toggleLike(b.dataset.postId); }); });
+  scope.querySelectorAll('.bookmark-btn').forEach(function(b){ b.addEventListener('click',function(){ toggleBookmark(b.dataset.postId); }); });
+  scope.querySelectorAll('.repost-btn').forEach(function(b){ b.addEventListener('click',function(){ toggleRepost(b.dataset.postId); }); });
+  scope.querySelectorAll('.comment-toggle-btn').forEach(function(b){ b.addEventListener('click',function(){ toggleComments(b.dataset.postId); }); });
+  scope.querySelectorAll('.author-row').forEach(function(r){ r.addEventListener('click',function(){ openAuthor(r.dataset.authorId); }); });
+  scope.querySelectorAll('.read-toggle-btn').forEach(function(b){ b.addEventListener('click',function(){ expandedPosts[b.dataset.postId]=!expandedPosts[b.dataset.postId]; rerenderAllInstancesOf(b.dataset.postId); }); });
+  scope.querySelectorAll('.comment-input').forEach(function(inp){ inp.addEventListener('keydown',function(e){ if(e.key==='Enter'){ var v=inp.value.trim(); if(v){ addComment(inp.dataset.postId,v,null); inp.value=''; } } }); });
+  scope.querySelectorAll('.carousel').forEach(attachCarouselDotSync);
+}
+function attachCarouselDotSync(carousel){
+  var wrapper=carousel.nextElementSibling; if(!wrapper || !wrapper.classList.contains('carousel-dots')) return;
+  var dots=wrapper.querySelectorAll('.carousel-dot');
+  carousel.addEventListener('scroll',function(){ var idx=Math.round(carousel.scrollLeft/carousel.clientWidth); dots.forEach(function(d,i){ d.classList.toggle('active',i===idx); }); });
+}
+function rerenderAllInstancesOf(postId){
+  var cards=document.querySelectorAll('.post-card[data-post-id="'+postId+'"]');
+  var posts=getPosts(); var post=posts.find(function(p){return p.id===postId;}); if(!post) return;
+  cards.forEach(function(oldCard){
+    var wasOpen=oldCard.querySelector('.comments-drawer').classList.contains('open');
+    var temp=document.createElement('div'); temp.innerHTML=renderPostCard(post);
+    var newCard=temp.firstElementChild;
+    oldCard.replaceWith(newCard);
+    attachFeedHandlers(newCard);
+    if(wasOpen){ var drawer=newCard.querySelector('.comments-drawer'); renderCommentsList(postId,drawer.querySelector('.comments-list')); drawer.classList.add('open'); }
+  });
+}
+function toggleLike(postId){
+  var posts=getPosts(); var post=posts.find(function(p){return p.id===postId;}); if(!post) return;
+  var me=currentUser(); var idx=post.likes.indexOf(me.id);
+  if(idx>-1) post.likes.splice(idx,1); else post.likes.push(me.id);
+  setPosts(posts); rerenderAllInstancesOf(postId);
+}
+function toggleBookmark(postId){
+  var posts=getPosts(); var post=posts.find(function(p){return p.id===postId;}); if(!post) return;
+  var me=currentUser(); var idx=post.bookmarks.indexOf(me.id);
+  if(idx>-1) post.bookmarks.splice(idx,1); else post.bookmarks.push(me.id);
+  setPosts(posts);
+  if(document.querySelector('.view.active').id==='view-profile') renderProfile(); else rerenderAllInstancesOf(postId);
+}
+function toggleRepost(postId){
+  var posts=getPosts(); var post=posts.find(function(p){return p.id===postId;}); if(!post) return;
+  var me=currentUser(); var idx=post.reposts.indexOf(me.id); var feedReposts=getFeedReposts();
+  if(idx>-1){ post.reposts.splice(idx,1); feedReposts=feedReposts.filter(function(r){ return !(r.postId===postId && r.userId===me.id); }); }
+  else{ post.reposts.push(me.id); feedReposts.push({id:uid('r'),postId:postId,userId:me.id,date:Date.now()}); }
+  setPosts(posts); setFeedReposts(feedReposts);
+  var av=document.querySelector('.view.active').id;
+  if(av==='view-feed') renderFeed(); else if(av==='view-profile') renderProfile(); else rerenderAllInstancesOf(postId);
+}
+function toggleComments(postId){
+  var drawer=document.querySelector('.comments-drawer[data-post-id="'+postId+'"]'); if(!drawer) return;
+  var isOpen=drawer.classList.contains('open');
+  if(!isOpen){ renderCommentsList(postId,drawer.querySelector('.comments-list')); drawer.classList.add('open'); }
+  else drawer.classList.remove('open');
+}
+
+/* ---------- threaded comments: one fixed indent level, collapsed by default ---------- */
+function countDescendants(post,parentId){
+  var kids=post.comments.filter(function(c){ return c.parentId===parentId; });
+  var total=kids.length;
+  kids.forEach(function(k){ total+=countDescendants(post,k.id); });
+  return total;
+}
+function renderCommentsList(postId,listEl){
+  var posts=getPosts(); var post=posts.find(function(p){return p.id===postId;}); if(!post||!listEl) return;
+  if(!post.comments.length){ listEl.innerHTML='<div class="text-xs mb-2" style="color:var(--ink-faint);">No comments yet. Be the first to reply.</div>'; return; }
+  var top=post.comments.filter(function(c){ return !c.parentId; }).sort(function(a,b){ return a.date-b.date; });
+  listEl.innerHTML=top.map(function(c){ return renderCommentBlock(post,c); }).join('');
+  attachCommentHandlers(postId,listEl);
+}
+function renderCommentRow(c){
+  var u=getUserById(c.userId)||{name:'Unknown',avatar:null};
+  var me=currentUser(); var liked=c.likes.indexOf(me.id)>-1;
+  return '<div class="flex gap-2.5">'+
+    '<img class="avatar w-6 h-6" src="'+avatarSrc(u)+'">'+
+    '<div class="flex-1">'+
+      '<div class="text-sm"><span class="font-semibold">'+escapeHtml(u.name)+'</span> <span style="color:#3B3A34;">'+escapeHtml(c.text)+'</span></div>'+
+      '<div class="flex items-center gap-3 mt-1">'+
+        '<button class="comment-heart '+(liked?'liked':'')+'" data-comment-id="'+c.id+'"><svg viewBox="0 0 24 24" fill="'+(liked?'currentColor':'none')+'" stroke="currentColor" stroke-width="2"><path d="M12 20s-7-4.35-9.5-8.8C.7 7.6 2.4 4 6 4c2 0 3.5 1.1 4.2 2.4C10.9 5.1 12.4 4 14.4 4 18 4 19.7 7.6 17.9 11.2 15.4 15.65 12 20 12 20z"/></svg><span>'+c.likes.length+'</span></button>'+
+        '<button class="comment-reply-btn" data-comment-id="'+c.id+'">Reply</button>'+
+        '<span class="text-[10.5px]" style="color:var(--ink-faint);">'+smartDate(c.date)+'</span>'+
+      '</div>'+
+    '</div>'+
+  '</div>';
+}
+function renderReplyInputIfOpen(c){
+  if(!openReplyFor[c.id]) return '';
+  return '<div class="reply-input-row" data-reply-row-for="'+c.id+'"><input type="text" class="comment-input-min reply-input" placeholder="Reply..." data-parent-id="'+c.id+'"></div>';
+}
+function renderDescendantsFlat(post,parentId){
+  var kids=post.comments.filter(function(c){ return c.parentId===parentId; }).sort(function(a,b){ return a.date-b.date; });
+  return kids.map(function(c){ return '<div class="comment-block">'+renderCommentRow(c)+renderReplyInputIfOpen(c)+renderDescendantsFlat(post,c.id)+'</div>'; }).join('');
+}
+function renderCommentBlock(post,comment){
+  var count=countDescendants(post,comment.id);
+  var html='<div class="comment-block">'+renderCommentRow(comment)+renderReplyInputIfOpen(comment);
+  if(count>0){
+    if(repliesOpen[comment.id]){
+      html+='<div class="replies-wrap">'+renderDescendantsFlat(post,comment.id)+'</div>';
+      html+='<button class="view-replies-btn" data-comment-id="'+comment.id+'">Hide replies</button>';
+    } else {
+      html+='<button class="view-replies-btn" data-comment-id="'+comment.id+'">View replies ('+count+')</button>';
+    }
+  }
+  html+='</div>';
+  return html;
+}
+function attachCommentHandlers(postId,listEl){
+  listEl.querySelectorAll('.comment-heart').forEach(function(b){ b.addEventListener('click',function(){ toggleCommentLike(postId,b.dataset.commentId); }); });
+  listEl.querySelectorAll('.comment-reply-btn').forEach(function(b){
+    b.addEventListener('click',function(){
+      var cid=b.dataset.commentId; openReplyFor[cid]=!openReplyFor[cid];
+      renderCommentsList(postId,listEl);
+      var row=listEl.querySelector('.reply-input-row[data-reply-row-for="'+cid+'"] .reply-input'); if(row) row.focus();
+    });
+  });
+  listEl.querySelectorAll('.view-replies-btn').forEach(function(b){ b.addEventListener('click',function(){ var cid=b.dataset.commentId; repliesOpen[cid]=!repliesOpen[cid]; renderCommentsList(postId,listEl); }); });
+  listEl.querySelectorAll('.reply-input').forEach(function(inp){
+    inp.addEventListener('keydown',function(e){ if(e.key==='Enter'){ var v=inp.value.trim(); if(v){ var pid=inp.dataset.parentId; repliesOpen[pid]=true; addComment(postId,v,pid); delete openReplyFor[pid]; } } });
+  });
+}
+function toggleCommentLike(postId,commentId){
+  var posts=getPosts(); var post=posts.find(function(p){return p.id===postId;}); if(!post) return;
+  var c=post.comments.find(function(x){return x.id===commentId;}); if(!c) return;
+  var me=currentUser(); var idx=c.likes.indexOf(me.id);
+  if(idx>-1) c.likes.splice(idx,1); else c.likes.push(me.id);
+  setPosts(posts);
+  var drawer=document.querySelector('.comments-drawer[data-post-id="'+postId+'"]');
+  if(drawer) renderCommentsList(postId,drawer.querySelector('.comments-list'));
+}
+function addComment(postId,text,parentId){
+  var posts=getPosts(); var post=posts.find(function(p){return p.id===postId;}); if(!post) return;
+  var newCommentId=uid('c');
+  post.comments.push({id:newCommentId,userId:currentUser().id,text:text,date:Date.now(),likes:[],parentId:parentId||null});
+  setPosts(posts);
+  rerenderAllInstancesOf(postId);
+  var drawer=document.querySelector('.comments-drawer[data-post-id="'+postId+'"]');
+  if(drawer){ renderCommentsList(postId,drawer.querySelector('.comments-list')); drawer.classList.add('open'); }
+  simulateLikeOnComment(postId,newCommentId);
+}
+
+/* ============================================================
+   AUTHOR PROFILE
+   ============================================================ */
+function openAuthor(authorId){
+  if(authorId===currentUser().id){ showView('profile'); return; }
+  document.getElementById('author-content').dataset.authorId=authorId;
+  renderAuthor(authorId);
+  document.querySelectorAll('.view').forEach(function(v){v.classList.remove('active');});
+  document.getElementById('view-author').classList.add('active');
+  document.querySelectorAll('.tab-btn').forEach(function(b){b.classList.remove('active');});
+}
+document.getElementById('author-back').addEventListener('click',function(){ showView('feed'); });
+function renderAuthor(authorId){
+  var user=getUserById(authorId); var me=currentUser(); if(!user) return;
+  var isFollowing=me.following.indexOf(authorId)>-1;
+  var posts=getPosts().filter(function(p){return p.authorId===authorId;}).sort(function(a,b){return b.date-a.date;});
+  var html='<div class="px-[18px] py-6 flex flex-col items-center text-center">'+
+    '<img class="avatar w-20 h-20 mb-3" src="'+avatarSrc(user)+'">'+
+    '<span class="font-headline text-xl mb-0.5">'+escapeHtml(user.name)+'</span>'+
+    '<span class="text-xs mb-2" style="color:var(--ink-faint);">@'+escapeHtml(user.username||'')+'</span>'+
+    '<p class="text-sm mb-4" style="color:var(--ink-soft); max-width:280px;">'+escapeHtml(user.bio||'')+'</p>'+
+    '<div class="flex gap-6 mb-4 text-sm">'+
+      '<button class="stat-btn people-stat-btn" data-user-id="'+authorId+'" data-kind="followers"><b id="author-followers-count">'+user.followers.length+'</b> <span style="color:var(--ink-soft);">followers</span></button>'+
+      '<button class="stat-btn people-stat-btn" data-user-id="'+authorId+'" data-kind="following"><b>'+user.following.length+'</b> <span style="color:var(--ink-soft);">following</span></button>'+
+      '<span><b>'+posts.length+'</b> <span style="color:var(--ink-soft);">stories</span></span>'+
+    '</div>'+
+    '<button id="follow-toggle-btn" class="btn-outline '+(isFollowing?'following':'')+'">'+(isFollowing?'Following':'Follow')+'</button>'+
+  '</div><div style="border-top:8px solid var(--hair);"></div><div id="author-posts"></div>';
+  document.getElementById('author-content').innerHTML=html;
+  var pw=document.getElementById('author-posts');
+  if(!posts.length){ pw.innerHTML='<div class="empty-state">No stories published yet.</div>'; }
+  else{ pw.innerHTML=posts.map(renderPostCard).join('')+endOfListFooter(); attachFeedHandlers(pw); }
+  document.getElementById('follow-toggle-btn').addEventListener('click',function(){ toggleFollow(authorId); });
+  attachPeopleStatHandlers(document.getElementById('author-content'));
+}
+function toggleFollow(authorId){
+  var users=getUsers(); var me=users.find(function(u){return u.id===currentUser().id;}); var other=users.find(function(u){return u.id===authorId;});
+  if(!me||!other) return;
+  var idx=me.following.indexOf(authorId);
+  if(idx>-1){ me.following.splice(idx,1); var fidx=other.followers.indexOf(me.id); if(fidx>-1) other.followers.splice(fidx,1); }
+  else{ me.following.push(authorId); other.followers.push(me.id); }
+  setUsers(users);
+  var btn=document.getElementById('follow-toggle-btn'); var now=me.following.indexOf(authorId)>-1;
+  btn.textContent=now?'Following':'Follow'; btn.classList.toggle('following',now);
+  var ce=document.getElementById('author-followers-count'); if(ce) ce.textContent=other.followers.length;
+}
+
+/* ============================================================
+   FOLLOWERS/FOLLOWING MODAL
+   ============================================================ */
+function attachPeopleStatHandlers(scope){ scope.querySelectorAll('.people-stat-btn').forEach(function(b){ b.addEventListener('click',function(){ openPeopleModal(b.dataset.userId,b.dataset.kind); }); }); }
+function openPeopleModal(userId,kind){
+  var user=getUserById(userId); if(!user) return;
+  var ids=kind==='followers'?user.followers:user.following;
+  document.getElementById('people-modal-title').textContent=kind==='followers'?'Followers':'Following';
+  var listEl=document.getElementById('people-modal-list');
+  if(!ids.length){ listEl.innerHTML='<div class="empty-state" style="padding:30px 10px;">'+(kind==='followers'?'No followers yet.':'Not following anyone yet.')+'</div>'; }
+  else{
+    listEl.innerHTML=ids.map(function(id){
+      var u=getUserById(id); if(!u) return '';
+      return '<button class="list-user-row w-full text-left people-list-item" data-user-id="'+id+'"><img class="avatar w-9 h-9" src="'+avatarSrc(u)+'"><div class="flex flex-col leading-tight"><span class="text-sm font-semibold">'+escapeHtml(u.name)+'</span><span class="text-xs" style="color:var(--ink-soft);">@'+escapeHtml(u.username||'')+'</span></div></button>';
+    }).join('');
+    listEl.querySelectorAll('.people-list-item').forEach(function(item){ item.addEventListener('click',function(){ document.getElementById('modal-people').classList.add('hidden'); openAuthor(item.dataset.userId); }); });
+  }
+  document.getElementById('modal-people').classList.remove('hidden');
+}
+document.getElementById('people-modal-close').addEventListener('click',function(){ document.getElementById('modal-people').classList.add('hidden'); });
+document.getElementById('modal-people').addEventListener('click',function(e){ if(e.target.id==='modal-people') e.currentTarget.classList.add('hidden'); });
+
+/* ============================================================
+   WORDS: List + Flashcards
+   ============================================================ */
+var wordsSubTab='list';
+function renderWords(){
+  var words=getDict();
+  document.getElementById('words-count').textContent=words.length+(words.length===1?' word':' words');
+  document.getElementById('words-tab-list').classList.toggle('active',wordsSubTab==='list');
+  document.getElementById('words-tab-flash').classList.toggle('active',wordsSubTab==='flash');
+  if(wordsSubTab==='flash'){
+    if(!words.length){ alert('Save a few words first to start flashcards.'); wordsSubTab='list'; document.getElementById('words-tab-list').classList.add('active'); document.getElementById('words-tab-flash').classList.remove('active'); }
+    else{ openFlashcards(); return; }
+  }
+  var wrap=document.getElementById('words-list');
+  if(!words.length){ wrap.innerHTML='<div class="empty-state">Select any word in an article and tap "Save" to build your vocabulary.</div>'; return; }
+  wrap.innerHTML=words.slice().sort(function(a,b){return b.date-a.date;}).map(function(w){
+    return '<div class="word-row" data-word="'+escapeHtml(w.word)+'"><div class="flex flex-col gap-0.5"><div class="flex items-baseline gap-2"><span class="font-serif text-base font-bold">'+escapeHtml(w.word)+'</span><span class="word-transcription">'+escapeHtml(w.transcription)+'</span></div><span class="text-xs" style="color:var(--moss);">'+escapeHtml(w.translation)+'</span></div><button class="word-del-btn word-del-item" data-word="'+escapeHtml(w.word)+'" aria-label="Delete word"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7h16M9 7V4h6v3M6 7l1 13a2 2 0 002 2h6a2 2 0 002-2l1-13"/></svg></button></div>';
+  }).join('') + endOfListFooter();
+  wrap.querySelectorAll('.word-del-item').forEach(function(b){ b.addEventListener('click',function(){ var d=getDict().filter(function(w){return w.word.toLowerCase()!==b.dataset.word.toLowerCase();}); setDict(d); renderWords(); }); });
+}
+document.getElementById('words-tab-list').addEventListener('click',function(){ wordsSubTab='list'; renderWords(); });
+document.getElementById('words-tab-flash').addEventListener('click',function(){ wordsSubTab='flash'; renderWords(); });
+async function addWordToDict(rawWord){
+  var word=rawWord.replace(/[^a-zA-Zа-яА-ЯёЁ'-]/g,'').trim();
+  if(!word) return {added:false};
+  var dict=getDict();
+  var exists=dict.some(function(w){return w.word.toLowerCase()===word.toLowerCase();});
+  if(exists) return {added:false, existing:true};
+  var data=await getWordData(word);
+  dict.push({ word:data.word, translation:data.translation, transcription:data.transcription, date:Date.now() });
+  setDict(dict);
+  return {added:true, entry:data};
+}
+
+var flashIndex=0, flashWords=[], flashFlipped=false, flashTouchStartX=null;
+function openFlashcards(){
+  flashWords=getDict().slice().sort(function(a,b){return b.date-a.date;});
+  flashIndex=0; flashFlipped=false;
+  document.getElementById('flashcards-overlay').classList.add('active');
+  renderFlashcard();
+}
+function closeFlashcards(){
+  document.getElementById('flashcards-overlay').classList.remove('active');
+  wordsSubTab='list'; document.getElementById('words-tab-list').classList.add('active'); document.getElementById('words-tab-flash').classList.remove('active');
+}
+document.getElementById('flash-close').addEventListener('click',closeFlashcards);
+function renderFlashcard(){
+  var w=flashWords[flashIndex]; if(!w) return;
+  document.getElementById('flash-word-front').textContent=w.word;
+  document.getElementById('flash-transcription-front').textContent=w.transcription;
+  document.getElementById('flash-word-back').textContent=w.word;
+  document.getElementById('flash-translation-back').textContent=w.translation;
+  document.getElementById('flash-position').textContent=(flashIndex+1)+' / '+flashWords.length;
+  flashFlipped=false; document.getElementById('flash-card-inner').classList.remove('flipped');
+}
+document.getElementById('flash-card').addEventListener('click',function(){ flashFlipped=!flashFlipped; document.getElementById('flash-card-inner').classList.toggle('flipped',flashFlipped); });
+document.getElementById('flash-next').addEventListener('click',function(){ if(flashIndex<flashWords.length-1){ flashIndex++; renderFlashcard(); } });
+document.getElementById('flash-prev').addEventListener('click',function(){ if(flashIndex>0){ flashIndex--; renderFlashcard(); } });
+document.getElementById('flash-card').addEventListener('touchstart',function(e){ flashTouchStartX=e.touches[0].clientX; },{passive:true});
+document.getElementById('flash-card').addEventListener('touchend',function(e){
+  if(flashTouchStartX===null) return;
+  var dx=e.changedTouches[0].clientX-flashTouchStartX;
+  if(Math.abs(dx)>50){ if(dx<0 && flashIndex<flashWords.length-1){ flashIndex++; renderFlashcard(); } else if(dx>0 && flashIndex>0){ flashIndex--; renderFlashcard(); } }
+  flashTouchStartX=null;
+});
+
+/* ============================================================
+   WRITE (multi-photo + tags)
+   ============================================================ */
+var writePhotos=[];
+function resetWriteForm(){
+  document.getElementById('write-title').value=''; document.getElementById('write-tags').value=''; document.getElementById('write-body').value='';
+  writePhotos=[]; renderWriteThumbs(); document.getElementById('write-photo-input').value='';
+}
+function renderWriteThumbs(){
+  var row=document.getElementById('write-thumbs'); var dz=document.getElementById('write-dropzone');
+  if(!writePhotos.length){ row.classList.add('hidden'); row.innerHTML=''; dz.querySelector('.dz-title').textContent='+ Add photos'; return; }
+  dz.querySelector('.dz-title').textContent='+ Add more photos'; row.classList.remove('hidden');
+  row.innerHTML=writePhotos.map(function(src,i){ return '<div class="thumb-item"><img src="'+src+'"><button class="thumb-remove" data-index="'+i+'">✕</button></div>'; }).join('');
+  row.querySelectorAll('.thumb-remove').forEach(function(b){ b.addEventListener('click',function(){ writePhotos.splice(parseInt(b.dataset.index,10),1); renderWriteThumbs(); }); });
+}
+document.getElementById('write-cancel').addEventListener('click',function(){ showView('feed'); });
+document.getElementById('write-dropzone').addEventListener('click',function(){ document.getElementById('write-photo-input').click(); });
+document.getElementById('write-photo-input').addEventListener('change',function(e){
+  var files=Array.prototype.slice.call(e.target.files||[]); if(!files.length) return;
+  var remaining=files.length;
+  files.forEach(function(file){ compressImageFile(file,1080,0.75,function(dataUrl){ writePhotos.push(dataUrl); remaining--; if(remaining===0) renderWriteThumbs(); }); });
+});
+document.getElementById('write-publish').addEventListener('click',function(){
+  var title=document.getElementById('write-title').value.trim();
+  var body=document.getElementById('write-body').value.trim();
+  var tagsRaw=document.getElementById('write-tags').value.trim();
+  if(!title || !body){ alert('Please add a title and some content before publishing.'); return; }
+  var tags=tagsRaw ? tagsRaw.split(',').map(function(t){return t.trim().replace(/^#/,'');}).filter(Boolean) : [];
+  var posts=getPosts();
+  var newPostId=uid('p');
+  posts.push({ id:newPostId, authorId:currentUser().id, title:title, tags:tags, content:body, images:writePhotos.slice(), likes:[], bookmarks:[], reposts:[], comments:[], date:Date.now() });
+  setPosts(posts); resetWriteForm(); showView('feed');
+  simulateLikeOnPost(newPostId);
+});
+
+/* ============================================================
+   PROFILE: My Stories / Bookmarked / Reposts
+   (uses the exact same renderPostCard + attachFeedHandlers pipeline as the
+   Feed, so likes/comments/read-more/tags all work identically here.)
+   ============================================================ */
+var profileFilter='stories';
+function renderProfile(){
+  var me=currentUser(); var allPosts=getPosts();
+  var myPosts=allPosts.filter(function(p){return p.authorId===me.id;}).sort(function(a,b){return b.date-a.date;});
+  var bookmarked=allPosts.filter(function(p){return p.bookmarks.indexOf(me.id)>-1;}).sort(function(a,b){return b.date-a.date;});
+  var reposted=allPosts.filter(function(p){return p.reposts.indexOf(me.id)>-1;}).sort(function(a,b){return b.date-a.date;});
+  var html='<div class="px-[18px] py-6 flex flex-col items-center text-center">'+
+    '<img class="avatar w-20 h-20 mb-3" src="'+avatarSrc(me)+'">'+
+    '<span class="font-headline text-xl mb-0.5">'+escapeHtml(me.name)+'</span>'+
+    '<span class="text-xs mb-2" style="color:var(--ink-faint);">@'+escapeHtml(me.username||'')+'</span>'+
+    '<p class="text-sm mb-4" style="color:var(--ink-soft); max-width:280px;">'+escapeHtml(me.bio||'')+'</p>'+
+    '<div class="flex gap-6 text-sm">'+
+      '<button class="stat-btn people-stat-btn" data-user-id="'+me.id+'" data-kind="followers"><b>'+me.followers.length+'</b> <span style="color:var(--ink-soft);">followers</span></button>'+
+      '<button class="stat-btn people-stat-btn" data-user-id="'+me.id+'" data-kind="following"><b>'+me.following.length+'</b> <span style="color:var(--ink-soft);">following</span></button>'+
+      '<span><b>'+myPosts.length+'</b> <span style="color:var(--ink-soft);">stories</span></span>'+
+    '</div></div>'+
+    '<div class="flex" style="border-top:1px solid var(--hair); border-bottom:1px solid var(--hair);">'+
+      '<button id="profile-tab-stories" class="flex-1 py-2.5 text-sm font-semibold" style="'+(profileFilter==='stories'?'color:var(--moss); border-bottom:2px solid var(--moss);':'color:var(--ink-soft);')+'">My Stories</button>'+
+      '<button id="profile-tab-bookmarks" class="flex-1 py-2.5 text-sm font-semibold" style="'+(profileFilter==='bookmarks'?'color:var(--moss); border-bottom:2px solid var(--moss);':'color:var(--ink-soft);')+'">Bookmarked</button>'+
+      '<button id="profile-tab-reposts" class="flex-1 py-2.5 text-sm font-semibold" style="'+(profileFilter==='reposts'?'color:var(--moss); border-bottom:2px solid var(--moss);':'color:var(--ink-soft);')+'">Reposts</button>'+
+    '</div><div id="profile-posts"></div>';
+  document.getElementById('profile-content').innerHTML=html;
+  var list=profileFilter==='stories'?myPosts:(profileFilter==='bookmarks'?bookmarked:reposted);
+  var emptyMsg=profileFilter==='stories'?'You haven\'t published any stories yet.':(profileFilter==='bookmarks'?'Bookmark stories to find them here later.':'Repost a story to see it here.');
+  var wrap=document.getElementById('profile-posts');
+  if(!list.length){ wrap.innerHTML='<div class="empty-state">'+emptyMsg+'</div>'; }
+  else{ wrap.innerHTML=list.map(renderPostCard).join('')+endOfListFooter(); attachFeedHandlers(wrap); }
+  document.getElementById('profile-tab-stories').addEventListener('click',function(){ profileFilter='stories'; renderProfile(); });
+  document.getElementById('profile-tab-bookmarks').addEventListener('click',function(){ profileFilter='bookmarks'; renderProfile(); });
+  document.getElementById('profile-tab-reposts').addEventListener('click',function(){ profileFilter='reposts'; renderProfile(); });
+  attachPeopleStatHandlers(document.getElementById('profile-content'));
+}
+document.getElementById('feed-bookmarks-btn').addEventListener('click',function(){ profileFilter='bookmarks'; showView('profile'); });
+
+var pendingAvatarData=null;
+document.getElementById('profile-edit-btn').addEventListener('click',function(){
+  var me=currentUser(); pendingAvatarData=me.avatar;
+  document.getElementById('edit-avatar-preview').src=avatarSrc(me);
+  document.getElementById('edit-name').value=me.name;
+  document.getElementById('edit-bio').value=me.bio||'';
+  document.getElementById('modal-edit-profile').classList.remove('hidden');
+});
+document.getElementById('edit-profile-close').addEventListener('click',function(){ document.getElementById('modal-edit-profile').classList.add('hidden'); });
+document.getElementById('edit-avatar-input').addEventListener('change',function(e){
+  var file=e.target.files && e.target.files[0]; if(!file) return;
+  compressImageFile(file,480,0.85,function(dataUrl){ pendingAvatarData=dataUrl; document.getElementById('edit-avatar-preview').src=dataUrl; });
+});
+document.getElementById('edit-profile-save').addEventListener('click',function(){
+  var users=getUsers(); var me=users.find(function(u){return u.id===currentUser().id;});
+  me.name=document.getElementById('edit-name').value.trim()||me.name;
+  me.bio=document.getElementById('edit-bio').value.trim();
+  me.avatar=pendingAvatarData;
+  setUsers(users);
+  document.getElementById('modal-edit-profile').classList.add('hidden');
+  renderProfile();
+  if(document.querySelector('.view.active').id==='view-feed') renderFeed();
+});
+
+/* ============================================================
+   SELECTION TOOLTIP: Save + Translate (dual-API)
+   ============================================================ */
+var tooltip=document.getElementById('save-tooltip');
+var pendingSelectedWord=null;
+function extractSingleWord(sel){
+  if(!sel) return null; var text=sel.toString().trim(); if(!text) return null;
+  var first=text.split(/\s+/)[0]; var cleaned=first.replace(/^[^a-zA-Zа-яА-ЯёЁ]+|[^a-zA-Zа-яА-ЯёЁ]+$/g,'');
+  return cleaned||null;
+}
+function positionTooltip(rect){
+  var x=rect.left+rect.width/2, y=rect.top-10;
+  var minX=70, maxX=window.innerWidth-70;
+  x=Math.max(minX,Math.min(maxX,x)); y=Math.max(50,y);
+  tooltip.style.left=x+'px'; tooltip.style.top=y+'px';
+}
+function handleSelectionChange(){
+  var sel=window.getSelection();
+  if(!sel || sel.isCollapsed || sel.rangeCount===0){ hideTooltip(); return; }
+  var anchor=sel.anchorNode; if(!anchor){ hideTooltip(); return; }
+  var container=anchor.nodeType===1?anchor:anchor.parentElement;
+  if(!container || !container.closest('.selectable-text')){ hideTooltip(); return; }
+  var word=extractSingleWord(sel); if(!word){ hideTooltip(); return; }
+  var range=sel.getRangeAt(0); var rect=range.getBoundingClientRect();
+  if(!rect || (rect.width===0 && rect.height===0)){ hideTooltip(); return; }
+  pendingSelectedWord=word; positionTooltip(rect); tooltip.classList.remove('hidden');
+}
+function hideTooltip(){ tooltip.classList.add('hidden'); pendingSelectedWord=null; }
+document.addEventListener('selectionchange',function(){ window.clearTimeout(window.__basyaSelTimer); window.__basyaSelTimer=window.setTimeout(handleSelectionChange,30); });
+
+function commitSaveWord(e){
+  e.preventDefault(); e.stopPropagation();
+  if(!pendingSelectedWord) return;
+  var w=pendingSelectedWord;
+  hideTooltip(); window.getSelection().removeAllRanges();
+  flashSavedFeedback('Looking up "'+w+'"…');
+  addWordToDict(w).then(function(result){
+    flashSavedFeedback(result.added ? 'Saved "'+w+'"' : 'Already saved');
+    if(document.querySelector('.view.active').id==='view-words' && wordsSubTab==='list') renderWords();
+  });
+}
+function commitTranslateWord(e){
+  e.preventDefault(); e.stopPropagation();
+  if(!pendingSelectedWord) return;
+  var w=pendingSelectedWord;
+  hideTooltip(); window.getSelection().removeAllRanges();
+  openTranslateModal(w,'Looking up…','Fetching translation…');
+  getWordData(w).then(function(data){ openTranslateModal(data.word,data.transcription,data.translation); });
+}
+document.getElementById('tooltip-save-btn').addEventListener('pointerdown',commitSaveWord);
+document.getElementById('tooltip-save-btn').addEventListener('touchstart',commitSaveWord,{passive:false});
+document.getElementById('tooltip-save-btn').addEventListener('click',commitSaveWord);
+document.getElementById('tooltip-translate-btn').addEventListener('pointerdown',commitTranslateWord);
+document.getElementById('tooltip-translate-btn').addEventListener('touchstart',commitTranslateWord,{passive:false});
+document.getElementById('tooltip-translate-btn').addEventListener('click',commitTranslateWord);
+
+var translateModalWord=null;
+function openTranslateModal(word,transcription,translation){
+  translateModalWord=word;
+  document.getElementById('translate-word').textContent=word;
+  document.getElementById('translate-transcription').textContent=transcription;
+  document.getElementById('translate-text').textContent=translation;
+  document.getElementById('modal-translate').classList.remove('hidden');
+}
+document.getElementById('translate-close').addEventListener('click',function(){ document.getElementById('modal-translate').classList.add('hidden'); });
+document.getElementById('modal-translate').addEventListener('click',function(e){ if(e.target.id==='modal-translate') e.currentTarget.classList.add('hidden'); });
+document.getElementById('translate-save-btn').addEventListener('click',function(){
+  if(!translateModalWord) return;
+  var btn=this; var original=btn.textContent; btn.textContent='Saving…'; btn.disabled=true;
+  addWordToDict(translateModalWord).then(function(){
+    btn.textContent=original; btn.disabled=false;
+    document.getElementById('modal-translate').classList.add('hidden');
+    if(document.querySelector('.view.active').id==='view-words' && wordsSubTab==='list') renderWords();
+  });
+});
+
+function flashSavedFeedback(msg){
+  var original=tooltip.innerHTML;
+  tooltip.innerHTML='<span style="padding:6px 10px;">'+escapeHtml(msg)+'</span>';
+  tooltip.classList.remove('hidden');
+  setTimeout(function(){ tooltip.classList.add('hidden'); tooltip.innerHTML=original; },900);
+}
+document.querySelectorAll('.view-scroll').forEach(function(el){ el.addEventListener('scroll',hideTooltip,true); });
+document.querySelectorAll('.tab-btn').forEach(function(b){ b.addEventListener('click',hideTooltip); });
+
+/* ============================================================
+   BOOT — waits for Firebase to finish loading (success or not),
+   then always falls back to the normal local session check.
+   ============================================================ */
+function bootApp(){ updateNotifBadge(); renderFeed(); showView('feed'); }
+async function initAuth(){
+  await firebaseInitPromise;
+  if(checkAuth()) bootApp();
+}
+initAuth();
+
+})();
+</script>
+</body>
+</html>
